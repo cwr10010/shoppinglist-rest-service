@@ -27,16 +27,11 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
 
-task jacocoRootReport(type: JacocoReport) {
-
-    sourceDirectories = files(sourceSets.main.allSource.srcDirs)
-    classDirectories = files(sourceSets.main.output)
-    executionData = files(jacocoTestReport.executionData)
+jacocoTestReport {
     reports {
-        html.enabled = true
-        xml.enabled = true
-        csv.enabled = false
-        xml.destination = file("${buildDir}/reports/jacoco/test/jacocoRootReport.xml")
+        xml.enabled true
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
     }
 }
 
