@@ -11,6 +11,16 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         return users.findOne(user_id).shoppingList
     }
 
+    @PostMapping
+    fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListEntry>): List<ShoppingListEntry> {
+        return users.findOne(user_id).apply {
+            shoppingList += list
+        } .let {
+            shoppingLists.save(list)
+            users.save(it)
+        } .shoppingList.sortedBy { it.order }
+    }
+
     @GetMapping("/{id}")
     fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String): ShoppingListEntry {
         return users.getOne(user_id).shoppingList.single { (entry_id) -> id == entry_id }
@@ -27,14 +37,14 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         }
     }
 
-    @PostMapping
-    fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListEntry>): Set<ShoppingListEntry> {
-        return users.findOne(user_id).apply {
-            shoppingList += list
+    @DeleteMapping("/{id}")
+    fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) {
+        val entry = shoppingLists.getOne(id)
+        users.getOne(user_id).apply {
+            shoppingList -= entry
+            shoppingLists.delete(entry)
         } .let {
-            shoppingLists.save(list)
             users.save(it)
-        } .shoppingList
+        }
     }
-
 }

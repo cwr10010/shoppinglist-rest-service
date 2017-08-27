@@ -28,13 +28,13 @@ open class TestBase {
         }
     }
 
-    fun readUser(location: URI): ResponseEntity<String> {
-        return restTemplate.getForEntity(location, String::class.java)
+    fun readUser(location: URI): ResponseEntity<UserVO> {
+        return restTemplate.getForEntity(location, UserVO::class.java)
     }
 
-    fun updateUser(location: URI, jsonStr: String): ResponseEntity<String> {
+    fun updateUser(location: URI, jsonStr: String): ResponseEntity<UserVO> {
         return HttpEntity<String>(jsonStr, standardHeaders()).let {
-            restTemplate.postForEntity(location, it, String::class.java)
+            restTemplate.postForEntity(location, it, UserVO::class.java)
         }
     }
 
@@ -42,11 +42,30 @@ open class TestBase {
         restTemplate.delete(location)
     }
 
+    fun getShoppingList(location: URI) :ResponseEntity<String> {
+        return restTemplate.getForEntity(location.toASCIIString() + "/shopping-list", String::class.java)
+    }
+
     fun addShoppingListEntry(location: URI, jsonStr: String): ResponseEntity<String> {
         return HttpEntity<String>(jsonStr, standardHeaders()).let {
             restTemplate.postForEntity(location.toASCIIString() + "/shopping-list", it, String::class.java)
         }
     }
+
+    fun getShoppingListEntry(location: URI, id: String): ResponseEntity<ShoppingListEntryVO> {
+        return restTemplate.getForEntity(location.toASCIIString() + "/shopping-list/" + id, ShoppingListEntryVO::class.java)
+    }
+
+    fun updateShoppingListEntry(location: URI, id: String, jsonStr: String): ResponseEntity<ShoppingListEntryVO> {
+        return HttpEntity<String>(jsonStr, standardHeaders()).let {
+            restTemplate.postForEntity(location.toASCIIString() + "/shopping-list/" + id, it, ShoppingListEntryVO::class.java)
+        }
+    }
+
+    fun deleteShoppingListEntry(location: URI, id: String) {
+        restTemplate.delete(location.toASCIIString() + "/shopping-list/" + id)
+    }
+
 }
 
 val USER_1 = Json {
@@ -73,3 +92,7 @@ class Json() {
 
     override fun toString(): String = json.toString()
 }
+
+data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null)
+data class UserVO(var name: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())
+

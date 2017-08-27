@@ -18,7 +18,9 @@ class UserResourceCRUDTest : TestBase() {
 
         readUser(location).let {
             assertEquals(HttpStatus.OK, it.statusCode)
-            assertEquals("""{"user_id":"${extractId(location)}","name":"Max","password":"p4ssw0rd","shopping_list":[]}""", it.body)
+            assertEquals(HttpStatus.OK, it.statusCode)
+            assertEquals("Max", it.body.name)
+            assertEquals("p4ssw0rd", it.body.password)
         }
     }
 
@@ -27,14 +29,15 @@ class UserResourceCRUDTest : TestBase() {
         val location = createUser(USER_1.toString())
 
         Json {
-            "user_id" To "${extractId(location)}"
+            "user_id" To extractId(location)
             "name" To "Mini"
             "password" To "p4ssw0rd2"
             "shopping_list" To emptyList<Json>()
         }.let {
             user -> updateUser(location, user.toString()).let {
                 assertEquals(HttpStatus.OK, it.statusCode)
-                assertEquals("""{"user_id":"${extractId(location)}","name":"Mini","password":"p4ssw0rd2","shopping_list":[]}""", it.body)
+                assertEquals("Mini", it.body.name)
+                assertEquals("p4ssw0rd2", it.body.password)
             }
         }
     }
