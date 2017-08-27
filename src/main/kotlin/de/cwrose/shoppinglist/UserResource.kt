@@ -9,11 +9,6 @@ import org.springframework.web.util.UriComponentsBuilder
 @RequestMapping("/users")
 class UserResource(val userRepository: UserRepository) {
 
-    @GetMapping
-    fun index(): List<User> {
-        return userRepository.findAll()
-    }
-
     @PostMapping
     fun index(@RequestBody user: User, uriComponentsBuilder: UriComponentsBuilder): ResponseEntity<Void> {
         return userRepository.save(user).let {
