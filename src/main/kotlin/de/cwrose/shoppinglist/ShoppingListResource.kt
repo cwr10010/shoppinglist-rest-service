@@ -23,12 +23,12 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
 
     @GetMapping("/{id}")
     fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String): ShoppingListEntry {
-        return users.getOne(user_id).shoppingList.single { (entry_id) -> id == entry_id }
+        return getShoppingListEntry(user_id, id)
     }
 
     @PostMapping("/{id}")
     fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String, @RequestBody shoppingListEntry: ShoppingListEntry): ShoppingListEntry {
-        return entry(user_id, id).apply {
+        return getShoppingListEntry(user_id, id).apply {
             name = shoppingListEntry.name
             description = shoppingListEntry.description
             order = shoppingListEntry.order
@@ -37,14 +37,19 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         }
     }
 
+    private fun getShoppingListEntry(user_id: String, id: String): ShoppingListEntry {
+        return users.getOne(user_id).shoppingList.single { (entry_id) -> id == entry_id }
+    }
+
     @DeleteMapping("/{id}")
     fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) {
-        val entry = shoppingLists.getOne(id)
-        users.getOne(user_id).apply {
-            shoppingList -= entry
-            shoppingLists.delete(entry)
-        } .let {
-            users.save(it)
+        shoppingLists.getOne(id).let {
+            users.getOne(user_id).apply {
+                shoppingList -= it
+                shoppingLists.delete(it)
+            } .let {
+                users.save(it)
+            }
         }
     }
 }

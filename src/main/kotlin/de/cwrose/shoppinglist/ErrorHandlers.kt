@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.MessageSource
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import java.util.*
@@ -19,11 +18,7 @@ class ExceptionHandlers @Autowired constructor(var messageSource: MessageSource)
 
 }
 
-data class ErrorResponse(val status: HttpStatus
-                         , val error:String
-                         , val message:String
-                         , val timestamp: Date
-                         , val bindingErrors: List<String>) {
+data class ErrorResponse(val status: HttpStatus, val error:String, val message:String, val timestamp: Date, val bindingErrors: List<String>) {
 
     constructor(status: HttpStatus, message:String) : this(status, status.reasonPhrase, message, Date(), ArrayList<String>())
 
