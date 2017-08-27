@@ -33,6 +33,7 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
+                    assertEquals(false, it[0].read)
                 }
             }
         }
@@ -41,6 +42,7 @@ class ShoppingListResourceTest: TestBase() {
             "name" To "Milk"
             "description" To "Sweet Milk"
             "order" To 1
+            "read" To true
         } .let {
             entry2 -> addShoppingListEntry(location, "[${entry2.toString()}]").let {
                 sle: ResponseEntity<String> ->
@@ -51,9 +53,11 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
+                    assertEquals(false, it[0].read)
                     assertEquals("Milk", it[1].name)
                     assertEquals("Sweet Milk", it[1].description)
                     assertEquals(1, it[1].order)
+                    assertEquals(true, it[1].read)
                 }
             }
         }
@@ -77,6 +81,7 @@ class ShoppingListResourceTest: TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
+            "read" To true
         } .let {
             entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]").let {
                 sle: ResponseEntity<String> ->
@@ -87,6 +92,7 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
+                    assertEquals(true, it[0].read)
                 }
             }
         }
@@ -100,6 +106,7 @@ class ShoppingListResourceTest: TestBase() {
                 assertEquals("Cheese", it[0].name)
                 assertEquals("Tasty Cheese", it[0].description)
                 assertEquals(0, it[0].order)
+                assertEquals(true, it[0].read)
             }
         }
     }
@@ -113,6 +120,7 @@ class ShoppingListResourceTest: TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
+            "read" To true
         } .let {
             entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]").let {
                 sleResponse: ResponseEntity<String> ->
@@ -124,6 +132,7 @@ class ShoppingListResourceTest: TestBase() {
                         assertEquals("Cheese", it.body.name)
                         assertEquals("Tasty Cheese", it.body.description)
                         assertEquals(0, it.body.order)
+                        assertEquals(true, it.body.read)
                     }
 
                 }
@@ -140,6 +149,7 @@ class ShoppingListResourceTest: TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
+            "read" To false
         } .let {
             entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]").let {
                 sleResponse: ResponseEntity<String> ->
@@ -151,6 +161,7 @@ class ShoppingListResourceTest: TestBase() {
                         "name" To "Milk"
                         "description" To "Sweet Milk"
                         "order" To 1
+                        "read" To true
                     } .let {
                         entry2 -> updateShoppingListEntry(location, it[0].id!!, entry2.toString()).let {
                             sle: ResponseEntity<ShoppingListEntryVO> ->
@@ -159,6 +170,7 @@ class ShoppingListResourceTest: TestBase() {
                             assertEquals("Milk", sle.body.name)
                             assertEquals("Sweet Milk", sle.body.description)
                             assertEquals(1, sle.body.order)
+                            assertEquals(true, sle.body.read)
                         }
                     }
                 }

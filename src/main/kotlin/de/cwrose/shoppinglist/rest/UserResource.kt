@@ -1,5 +1,7 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.rest
 
+import de.cwrose.shoppinglist.User
+import de.cwrose.shoppinglist.UserRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.util.UriComponentsBuilder

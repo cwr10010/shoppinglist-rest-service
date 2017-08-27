@@ -1,5 +1,8 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.rest
 
+import de.cwrose.shoppinglist.ShoppingListEntry
+import de.cwrose.shoppinglist.ShoppingListsRepository
+import de.cwrose.shoppinglist.UserRepository
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -32,6 +35,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             name = shoppingListEntry.name
             description = shoppingListEntry.description
             order = shoppingListEntry.order
+            read = shoppingListEntry.read
         } .let {
             shoppingLists.save(it)
         }
@@ -46,7 +50,6 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         shoppingLists.getOne(id).let {
             users.getOne(user_id).apply {
                 shoppingList -= it
-                shoppingLists.delete(it)
             } .let {
                 users.save(it)
             }

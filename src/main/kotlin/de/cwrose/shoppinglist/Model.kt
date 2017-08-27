@@ -16,7 +16,9 @@ data class ShoppingListEntry(
         var description: String? = null,
 
         @Column(name = "entry_order")
-        var order: Int? = null
+        var order: Int? = null,
+
+        var read: Boolean = false
 
 )
 
