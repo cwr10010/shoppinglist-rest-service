@@ -3,7 +3,6 @@ package de.cwrose.shoppinglist.auth
 import com.fasterxml.jackson.annotation.JsonIgnore
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -11,7 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Component
 
 @Component
-class JwtUserDetailsService(@Autowired val userRepository: UserRepository): UserDetailsService {
+class JwtUserDetailsService(val userRepository: UserRepository): UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails = userRepository.findByUsername(username).let {
             user -> when (user) {

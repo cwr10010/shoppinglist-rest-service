@@ -4,18 +4,14 @@ import com.google.gson.Gson
 import net.minidev.json.JSONObject
 import org.junit.After
 import org.junit.Before
-import org.junit.BeforeClass
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.*
-import org.springframework.orm.jpa.EntityManagerFactoryUtils
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
 import javax.annotation.PostConstruct
-import javax.transaction.TransactionManager
-import javax.transaction.Transactional
 
 open class TestBase {
 

@@ -43,7 +43,7 @@ interface ShoppingListsRepository: JpaRepository<ShoppingListItem, String>
 @Repository
 interface UserRepository: JpaRepository<User, String> {
 
-    fun findByUsername(username: String): User
+    fun findByUsername(username: String): User?
 
     fun deleteByUsername(username: String)
 }

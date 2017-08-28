@@ -10,12 +10,9 @@ import java.util.Date
 private val SECRET = Base64.encode("ABC".toByteArray())
 private val EXPIRATION = 100L
 
-internal fun validateToken(token: String, userDetails: UserDetails): Boolean {
-    val user = userDetails as JwtUser
-    val username = getUsernameFromToken(token)
-    return username == user.username
-            && !isTokenExpired(token)
-}
+internal fun validateToken(token: String, userDetails: UserDetails) = getUsernameFromToken(token).let {
+        userDetails.username == it && !isTokenExpired(token)
+    }
 
 internal fun isTokenExpired(token: String) = getExpirationDateFromToken(token).before(Date())
 

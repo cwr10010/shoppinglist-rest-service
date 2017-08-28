@@ -1,7 +1,9 @@
 package de.cwrose.shoppinglist.rest
 
-import de.cwrose.shoppinglist.auth.*
-import org.springframework.beans.factory.annotation.Autowired
+import de.cwrose.shoppinglist.auth.JwtUserDetailsService
+import de.cwrose.shoppinglist.auth.generateToken
+import de.cwrose.shoppinglist.auth.isTokenExpired
+import de.cwrose.shoppinglist.auth.refreshToken
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -11,7 +13,7 @@ import javax.servlet.http.HttpServletRequest
 
 @RestController
 @RequestMapping("/auth")
-class AuthenticationResource @Autowired constructor(val authenticationManager: AuthenticationManager, val userDetailsService: JwtUserDetailsService) {
+class AuthenticationResource (val authenticationManager: AuthenticationManager, val userDetailsService: JwtUserDetailsService) {
 
     @PostMapping
     fun createAuthToken(@RequestBody authenticationRequest: JwtAuthenticationRequest): ResponseEntity<JwtAuthenticationResponse> {
