@@ -1,81 +1,148 @@
 package de.cwrose.shoppinglist
 
+import com.google.gson.Gson
 import net.minidev.json.JSONObject
+import org.junit.After
+import org.junit.Before
+import org.junit.BeforeClass
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
+import org.springframework.orm.jpa.EntityManagerFactoryUtils
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
+import javax.annotation.PostConstruct
+import javax.transaction.TransactionManager
+import javax.transaction.Transactional
 
 open class TestBase {
 
     @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
     lateinit var restTemplate: TestRestTemplate
 
-    fun extractId(location: URI): String {
-        return location.toASCIIString().split("/").last()
+    @Autowired
+    lateinit var passwordEncoder: PasswordEncoder
+
+
+    @Autowired
+    lateinit var transactionManager: PlatformTransactionManager
+
+    lateinit var transactionTemplate: TransactionTemplate
+
+    @PostConstruct
+    fun setupClass() {
+        transactionTemplate = TransactionTemplate(transactionManager)
     }
 
-    fun standardHeaders(): HttpHeaders {
-        return HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
+    @Before
+    open fun setup() {
+        userRepository.save(User(username=ADMIN.json["username"] as String, password=passwordEncoder.encode(ADMIN.json["password"] as String)))
     }
 
-    fun createUser(jsonStr: String): URI {
-        return HttpEntity<String>(jsonStr, standardHeaders()).let {
-            restTemplate.postForLocation("/users", it, String::class.java)
+    @After
+    fun destroy() {
+        transactionTemplate.execute {
+            userRepository.deleteByUsername(username=ADMIN.json["username"] as String)
         }
     }
 
-    fun readUser(location: URI): ResponseEntity<UserVO> {
-        return restTemplate.getForEntity(location, UserVO::class.java)
+    fun authenticate(token: String): ResponseEntity<String> {
+        return HttpEntity<String>(ADMIN.toString(), standardHeaders(token)).let {
+            restTemplate.postForEntity("/auth/create", it, String::class.java)
+        }
     }
 
-    fun updateUser(location: URI, jsonStr: String): ResponseEntity<UserVO> {
-        return HttpEntity<String>(jsonStr, standardHeaders()).let {
+    fun extractId(location: URI?): String? {
+        return location?.toASCIIString()?.split("/")?.last()
+    }
+
+    fun extractToken(token: String): TokenVO {
+        val gson = Gson()
+        return gson.fromJson(token, TokenVO::class.java)
+    }
+
+    data class TokenVO(val token: String)
+
+    fun standardHeaders(token: String?): HttpHeaders {
+        return HttpHeaders().apply {
+            contentType = MediaType.APPLICATION_JSON
+            add("Authorization", "Bearer $token")
+        }
+    }
+
+    fun createUser(jsonStr: String, token: String?): ResponseEntity<String> {
+        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+            restTemplate.postForEntity("/users", it, String::class.java)
+        }
+    }
+
+    fun readUser(location: URI?, token: String?): ResponseEntity<UserVO> {
+        return HttpEntity<Void>(standardHeaders(token)).let {
+            restTemplate.exchange(location, HttpMethod.GET, it, UserVO::class.java)
+        }
+    }
+
+    fun updateUser(location: URI?, jsonStr: String, token: String): ResponseEntity<UserVO> {
+        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location, it, UserVO::class.java)
         }
     }
 
-    fun deleteUser(location: URI) {
-        restTemplate.delete(location)
-    }
-
-    fun getShoppingList(location: URI) :ResponseEntity<String> {
-        return restTemplate.getForEntity(location.toASCIIString() + "/shopping-list", String::class.java)
-    }
-
-    fun addShoppingListEntry(location: URI, jsonStr: String): ResponseEntity<String> {
-        return HttpEntity<String>(jsonStr, standardHeaders()).let {
-            restTemplate.postForEntity(location.toASCIIString() + "/shopping-list", it, String::class.java)
+    fun deleteUser(location: URI?, token: String?): ResponseEntity<Void> {
+        return HttpEntity<Void>(standardHeaders(token)).let {
+            restTemplate.exchange(location, HttpMethod.DELETE, it, Void::class.java)
         }
     }
 
-    fun getShoppingListEntry(location: URI, id: String): ResponseEntity<ShoppingListEntryVO> {
-        return restTemplate.getForEntity(location.toASCIIString() + "/shopping-list/" + id, ShoppingListEntryVO::class.java)
-    }
-
-    fun updateShoppingListEntry(location: URI, id: String, jsonStr: String): ResponseEntity<ShoppingListEntryVO> {
-        return HttpEntity<String>(jsonStr, standardHeaders()).let {
-            restTemplate.postForEntity(location.toASCIIString() + "/shopping-list/" + id, it, ShoppingListEntryVO::class.java)
+    fun getShoppingList(location: URI?, token: String?) :ResponseEntity<String> {
+        return HttpEntity<String>(standardHeaders(token)).let {
+            restTemplate.exchange(location?.toASCIIString() + "/shopping-list", HttpMethod.GET, it, String::class.java)
         }
     }
 
-    fun deleteShoppingListEntry(location: URI, id: String) {
-        restTemplate.delete(location.toASCIIString() + "/shopping-list/" + id)
+    fun addShoppingListEntry(location: URI?, jsonStr: String, token: String): ResponseEntity<String> {
+        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+            restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list", it, String::class.java)
+        }
     }
 
+    fun getShoppingListEntry(location: URI?, id: String, token: String?): ResponseEntity<ShoppingListEntryVO> {
+        return HttpEntity<ShoppingListEntryVO>(standardHeaders(token)).let {
+            restTemplate.exchange(location?.toASCIIString() + "/shopping-list/" + id, HttpMethod.GET, it, ShoppingListEntryVO::class.java)
+        }
+    }
+
+    fun updateShoppingListEntry(location: URI?, id: String, jsonStr: String, token: String): ResponseEntity<ShoppingListEntryVO> {
+        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+            restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list/" + id, it, ShoppingListEntryVO::class.java)
+        }
+    }
+
+    fun deleteShoppingListEntry(location: URI?, id: String, token: String?): ResponseEntity<Void> {
+        return HttpEntity<String>(standardHeaders(token)).let {
+            restTemplate.exchange(location?.toASCIIString() + "/shopping-list/" + id, HttpMethod.DELETE, it, Void::class.java)
+        }
+    }
 }
 
 val USER_1 = Json {
-    "name" To "Max"
+    "username" To "Max"
     "password" To "p4ssw0rd"
 }
 
 val USER_2 = Json {
-    "name" To "Mini"
+    "username" To "Mini"
     "password" To "p4ssw0rd2"
+}
+
+val ADMIN = Json {
+    "username" To "Admin"
+    "password" To "passwd"
 }
 
 class Json() {
@@ -94,5 +161,4 @@ class Json() {
 }
 
 data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null, var read: Boolean? = null)
-data class UserVO(var name: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())
-
+data class UserVO(var username: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())

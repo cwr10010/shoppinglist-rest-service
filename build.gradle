@@ -47,8 +47,11 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile 'org.springframework.boot:spring-boot-starter-security'
     compile 'com.h2database:h2'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    compile 'io.jsonwebtoken:jjwt:0.7.0'
+    compile 'joda-time:joda-time:2.9.9'
     testCompile('org.springframework.boot:spring-boot-starter-test')
     testCompile('org.jetbrains.kotlin:kotlin-test-junit')
     testCompile('com.github.salomonbrys.kotson:kotson:2.5.0')

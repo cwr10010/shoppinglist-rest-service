@@ -7,7 +7,7 @@ import java.util.*
 import javax.persistence.*
 
 @Entity @Table(name = "SHOPPING_LIST")
-data class ShoppingListEntry(
+data class ShoppingListItem(
 
         @Id var id: String = UUID.randomUUID().toString(),
 
@@ -28,17 +28,22 @@ data class User (
         @JsonProperty("user_id")
         @Id var id: String = UUID.randomUUID().toString(),
 
-        var name: String? = null,
+        var username: String? = null,
 
         var password: String? = null,
 
         @JsonProperty("shopping_list")
-        @OneToMany
-        var shoppingList: Set<ShoppingListEntry> = emptySet()
+        @OneToMany(fetch = FetchType.EAGER)
+        var shoppingList: Set<ShoppingListItem> = emptySet()
 )
 
 @Repository
-interface ShoppingListsRepository: JpaRepository<ShoppingListEntry, String>
+interface ShoppingListsRepository: JpaRepository<ShoppingListItem, String>
 
 @Repository
-interface UserRepository: JpaRepository<User, String>
+interface UserRepository: JpaRepository<User, String> {
+
+    fun findByUsername(username: String): User
+
+    fun deleteByUsername(username: String)
+}
