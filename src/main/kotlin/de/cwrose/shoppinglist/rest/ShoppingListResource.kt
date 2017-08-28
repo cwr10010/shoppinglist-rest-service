@@ -35,10 +35,8 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             shoppingLists.save(it)
         }
 
-
     private fun shoppingListItem(user_id: String, id: String) = users.getOne(user_id)
             .shoppingList.single { (item_id) -> id == item_id }
-
 
     @DeleteMapping("/{id}")
     fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
@@ -49,5 +47,4 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
                 users.save(it)
             }
         }
-
 }
