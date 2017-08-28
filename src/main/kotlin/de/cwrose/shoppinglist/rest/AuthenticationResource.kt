@@ -31,14 +31,18 @@ class AuthenticationResource (val authenticationManager: AuthenticationManager, 
 
     @GetMapping
     fun refreshAuthToken(request: HttpServletRequest): ResponseEntity<JwtAuthenticationResponse> {
-        val token = request.getHeader("Authentication")
+        val authorizationHeader = request.getHeader("Authorization")
 
-        return when {
-            !isTokenExpired(token) -> refreshToken(token).let {
-                ResponseEntity.ok(JwtAuthenticationResponse(token))
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ") && authorizationHeader.length > 10) {
+            var token = authorizationHeader.substring(7)
+            return when {
+                !isTokenExpired(token) -> refreshToken(token).let {
+                    ResponseEntity.ok(JwtAuthenticationResponse(token))
+                }
+                else -> ResponseEntity.badRequest().body(null)
             }
-            else -> ResponseEntity.badRequest().body(null)
         }
+        return ResponseEntity.badRequest().body(null)
     }
 }
 

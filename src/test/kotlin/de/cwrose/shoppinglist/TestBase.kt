@@ -47,9 +47,15 @@ open class TestBase {
         }
     }
 
-    fun authenticate(token: String): ResponseEntity<String> {
-        return HttpEntity<String>(ADMIN.toString(), standardHeaders(token)).let {
+    fun authenticate(token: String, user: Json = ADMIN): ResponseEntity<String> {
+        return HttpEntity<String>(user.toString(), standardHeaders(token)).let {
             restTemplate.postForEntity("/auth", it, String::class.java)
+        }
+    }
+
+    fun refresh(token: String): ResponseEntity<String> {
+        return HttpEntity<String>(standardHeaders(token)).let {
+            restTemplate.exchange("/auth", HttpMethod.GET, it, String::class.java)
         }
     }
 
