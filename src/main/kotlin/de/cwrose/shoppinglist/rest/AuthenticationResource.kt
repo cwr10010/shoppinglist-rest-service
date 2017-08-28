@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest
 @RequestMapping("/auth")
 class AuthenticationResource @Autowired constructor(val authenticationManager: AuthenticationManager, val userDetailsService: JwtUserDetailsService) {
 
-    @PostMapping("/create")
+    @PostMapping
     fun createAuthToken(@RequestBody authenticationRequest: JwtAuthenticationRequest): ResponseEntity<JwtAuthenticationResponse> {
 
         authenticationManager.authenticate(UsernamePasswordAuthenticationToken(authenticationRequest.username, authenticationRequest.password)).let {
@@ -27,7 +27,7 @@ class AuthenticationResource @Autowired constructor(val authenticationManager: A
         }
     }
 
-    @GetMapping("/refresh")
+    @GetMapping
     fun refreshAuthToken(request: HttpServletRequest): ResponseEntity<JwtAuthenticationResponse> {
         val token = request.getHeader("Authentication")
 

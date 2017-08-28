@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.codec.Base64
-import java.util.*
+import java.util.Date
 
 private val SECRET = Base64.encode("ABC".toByteArray())
 private val EXPIRATION = 100L

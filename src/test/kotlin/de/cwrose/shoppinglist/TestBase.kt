@@ -53,7 +53,7 @@ open class TestBase {
 
     fun authenticate(token: String): ResponseEntity<String> {
         return HttpEntity<String>(ADMIN.toString(), standardHeaders(token)).let {
-            restTemplate.postForEntity("/auth/create", it, String::class.java)
+            restTemplate.postForEntity("/auth", it, String::class.java)
         }
     }
 
