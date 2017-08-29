@@ -7,10 +7,12 @@ services:
       MYSQL_DATABASE: srs_db
       MYSQL_USER: srs_db
       MYSQL_PASSWORD: srs_passwd
+    volumes:
+      - "../conf/mysql:/etc/mysql/conf.d"
     ports:
-      - "3306"
+      - "127.0.0.1:3308:3308"
   srs:
-    build: .
+    build: ../
     image: shopping-rest-service
     environment:
       MYSQL_ROOT_PASSWORD: root_pw
