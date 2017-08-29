@@ -1,8 +1,6 @@
 package de.cwrose.shoppinglist.auth
 
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.*
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.codec.Base64
 import java.util.Date
@@ -14,22 +12,32 @@ internal fun validateToken(token: String, userDetails: UserDetails) = getUsernam
         userDetails.username == it && !isTokenExpired(token)
     }
 
-internal fun isTokenExpired(token: String) = getExpirationDateFromToken(token).before(Date())
+internal fun isTokenExpired(token: String): Boolean {
+    return try {
+        getAllClaimsFromToken(token).expiration.before(Date())
+    } catch (ex: ExpiredJwtException) {
+        true
+    }
+}
 
-internal fun getExpirationDateFromToken(token: String) = getAllClaimsFromToken(token).expiration
-
-internal fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
+internal fun getUsernameFromToken(token: String): String? {
+    return try {
+        getAllClaimsFromToken(token).subject
+    }  catch (ex: JwtException) {
+        null
+    }
+}
 
 private fun getAllClaimsFromToken(token: String) = Jwts.parser()
         .setSigningKey(SECRET)
         .parseClaimsJws(token)
         .getBody()
 
-internal fun generateToken(userDetails: UserDetails) = Jwts.builder()
+internal fun generateToken(userDetails: UserDetails, issueDate: Date = Date()) = Jwts.builder()
         .setClaims(hashMapOf())
         .setSubject(userDetails.username)
-        .setIssuedAt(Date())
-        .setExpiration(Date(Date().time + EXPIRATION * 1000))
+        .setIssuedAt(issueDate)
+        .setExpiration(Date(issueDate.time + EXPIRATION * 1000))
         .signWith(SignatureAlgorithm.HS512, SECRET)
         .compact()
 

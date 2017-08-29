@@ -1,5 +1,7 @@
 package de.cwrose.shoppinglist.auth
 
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.JwtException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -63,7 +65,7 @@ class JwtAuthenticationEntryPoint : AuthenticationEntryPoint, Serializable {
     override fun commence(request: HttpServletRequest,
                  response: HttpServletResponse,
                  authException: AuthenticationException) {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized")
     }
 
     companion object {
