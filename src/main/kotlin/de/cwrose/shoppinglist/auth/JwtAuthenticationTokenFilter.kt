@@ -1,7 +1,5 @@
 package de.cwrose.shoppinglist.auth
 
-import io.jsonwebtoken.ExpiredJwtException
-import io.jsonwebtoken.JwtException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
