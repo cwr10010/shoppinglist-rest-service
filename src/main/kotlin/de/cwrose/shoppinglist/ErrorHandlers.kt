@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import java.lang.RuntimeException
 import java.util.*
 import javax.persistence.EntityNotFoundException
 
@@ -14,7 +15,7 @@ import javax.persistence.EntityNotFoundException
 class ExceptionHandlers @Autowired constructor(var messageSource: MessageSource) {
 
     @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class)
-    fun resourceNotFoundException(exception: EntityNotFoundException, locale: Locale) = notFound("NOT FOUND")
+    fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("NOT FOUND")
 }
 
 data class ErrorResponse(val status: HttpStatus, val error:String, val message:String, val timestamp: Date, val bindingErrors: List<String>) {

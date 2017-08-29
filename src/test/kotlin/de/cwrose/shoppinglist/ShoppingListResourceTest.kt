@@ -2,6 +2,7 @@ package de.cwrose.shoppinglist
 
 import com.github.salomonbrys.kotson.typeToken
 import com.google.gson.Gson
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
@@ -139,16 +140,18 @@ class ShoppingListResourceTest: TestBase() {
             "read" To true
         } .let {
             entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]", token.token).let {
-                sleResponse: ResponseEntity<String> ->
-                assertEquals(HttpStatus.OK, sleResponse.statusCode)
+                addResponse: ResponseEntity<String> ->
+                assertEquals(HttpStatus.OK, addResponse.statusCode)
                 val gson = Gson()
-                gson.fromJson<List<ShoppingListEntryVO>>(sleResponse.body, typeToken<List<ShoppingListEntryVO>>()).let {
-                    assertEquals(1, it.size)
-                    getShoppingListEntry(location, it[0].id!!, token.token).let {
-                        assertEquals("Cheese", it.body.name)
-                        assertEquals("Tasty Cheese", it.body.description)
-                        assertEquals(0, it.body.order)
-                        assertEquals(true, it.body.read)
+                gson.fromJson<List<ShoppingListEntryVO>>(addResponse.body, typeToken<List<ShoppingListEntryVO>>()).let {
+                    gsonResult ->
+                    assertEquals(1, gsonResult.size)
+                    getShoppingListEntry(location, gsonResult[0].id!!, token.token).let {
+                        getResponse ->
+                        assertEquals("Cheese", getResponse.body.name)
+                        assertEquals("Tasty Cheese", getResponse.body.description)
+                        assertEquals(0, getResponse.body.order)
+                        assertEquals(true, getResponse.body.read)
                     }
 
                 }
