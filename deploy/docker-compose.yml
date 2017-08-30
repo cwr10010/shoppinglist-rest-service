@@ -15,7 +15,8 @@ services:
     build: ../
     image: shopping-rest-service
     environment:
-      MYSQL_ROOT_PASSWORD: root_pw
+      MYSQL_URL: jdbc:mysql://mysql:3308/srs_db
+      MYSQL_USER: srs_db
       MYSQL_PASSWORD: srs_passwd
     depends_on:
       - db
