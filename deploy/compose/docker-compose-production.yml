@@ -1,0 +1,9 @@
+version: '3'
+services:
+  db:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${root_pw}
+      MYSQL_PASSWORD: ${srs_passwd}
+  srs:
+    environment:
+      MYSQL_PASSWORD: ${srs_passwd}
