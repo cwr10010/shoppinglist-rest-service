@@ -3,9 +3,6 @@ package de.cwrose.shoppinglist
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.hibernate.annotations.Type
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
-import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -40,23 +37,31 @@ data class User (
 ): EntityBase()
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener::class)
 abstract class EntityBase (
 
         @JsonProperty("user_id")
         @Id
-        var id: String = UUID.randomUUID().toString(),
+        var id: String? = null,
 
         @JsonIgnore
-        @CreatedDate
-        @Temporal(TemporalType.DATE)
-        var created: Date = Date(),
+        @Temporal(TemporalType.TIMESTAMP)
+        var created: Date? = null,
 
         @JsonIgnore
-        @LastModifiedDate
-        @Temporal(TemporalType.DATE)
-        var modified: Date = Date()
-)
+        @Temporal(TemporalType.TIMESTAMP)
+        var modified: Date? = null
+) {
+    @PrePersist
+    fun prePersist() {
+        id = UUID.randomUUID().toString()
+        created = Date()
+    }
+
+    @PreUpdate
+    fun preUpdate() {
+        modified = Date()
+    }
+}
 
 @Repository
 interface ShoppingListsRepository: JpaRepository<ShoppingListItem, String>
