@@ -25,7 +25,6 @@ jobs:
         - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
         - docker push $REPO
     - stage: deploy
-      language: python
       addons:
         ssh_known_hosts: cwrose.de
       install: skip
