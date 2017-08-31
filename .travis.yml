@@ -1,3 +1,6 @@
+language: java
+jdk:
+  - oraclejdk8
 jobs:
   include:
     - stage: test
@@ -6,15 +9,12 @@ jobs:
       - secure: xz3wiX1UL4v0aOV7Y34krkig8kHBynuwaeGk/Drsr5x06KinJb41Flnna2YHuIbIKI4l013zZ3Xg+IPIZnyMG06zCg/JTBBinwk+y15o/T9XCkKPdPtPmQeY8VFIpbeHakYkZfqQT5MrTfw48PPkGTJCZJB7eTOgCQ+yuw1/CckzPYV9Y4OxuJ3qOqNqCUdphSYWgdx3iCBTolfj4NaSDt3ZeBoBXiuOki2pnmLvGXX2p2Oj9Ui123TycvQ0wAHXPu31ulqeyMu+ypCMkPQx4ZkjPtrbAxofOWbDk8cjcpbh0aQWZf+p+PMcmd/GuC5IuZmaWjz2Xg70hxe1e/j37/wXiQzH8oXfjLMp9/SOdlcC6noQHM+OHL5fSBurhTSB49pN/EHoAlFtuiXNeY/0+XVdHJOPGFlURnmmxDhAKp0eqwvKtN3QhX/4noJy6QetaQJfYepJt3XZoNJ973H7xY0kh8Jk2tMYFdyJFeb4znQaVo9l0MQCMTdwp+gwAUnsKINlf2/7rrt2TEINXpYNBhtj+VB3U+w9XTDmz1NBjeDG3KReROOB1Bdz7QgygCLUKVVGlXDa5mvRlEpJhxM0a9NSmsvP1Rlj/bXxikZm4rot2OqMXvozYS1dS3dwHWnHAPP5RC8wqhKeoAOi/YeV8BkeWMTl/2BcTI98rgvSTKU= # DOCKER_USER
       - secure: fM0VMHDML7L9Sz+9zn/TkA8wpSFVbm7lDp1kvJWcfbl66/7hoFfOKa9x2QbhIXUf7W95K5ksEJtmQjxKVQ1eAbjLbkzI3/vGjD8Buy1ZSUBCKpwQmWRZlMqAsvAx3aUhOzZQqejcncTHN57JYJ1DqfY7+Y0gAkFWwN9Bvwwr7jz8zQda4eH6u5dZzSPxh9GxftkuC3vFQH8hg0ugcvNcKhXrAsvcsfOgXr5D39hLTubn8+VAdKExvpt381SLZLAmU5flUCpPqFbpa3x+DIQgugnlisjAMOQw7VOVxqUpp5vuKcnOWdcqfWucvbOzI2E4vcpHmdT87A8yPQQ8TOzZRuTW4NwWyTiMh9bGmVeOXi1rFfX0m5Y5plxQGEZoWPCSWEsm5LGw3/mMg/SxJlcGYIidF35IOeXd2J+DeVyxeN9onDe8NnSQfxVTds6slGM8WystgLKWP6B+3Odo1XlwUUZi0clcWTaoc4aaWS/3P4I0oJybDWHVJGoEceaBQzs9gg3ENe3wpTvkuiWUTb5tTNsht2xBtRu5OQg9tU1wVmNvPRwCxCYirdRbdn7Wh7hlX1gRIUrT4+W/hhXdcP/ldRvwFGa79JctbLBKuGgoSsIO+lmfjM8DMQn/OpCVCBGru1+liysB0JLphv2R8iy5gAzrlhRGeM/mKw8A/BxNhPI= # DOCKER_PASS
       - COMMIT=${TRAVIS_COMMIT::8}
-      language: java
       services:
         - docker
       addons:
         apt:
           packages:
             - oracle-java8-installer
-      jdk:
-        - oraclejdk8
       after_success:
         - ./gradlew jacocoTestReport coveralls
         - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
