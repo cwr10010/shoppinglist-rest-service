@@ -7,14 +7,14 @@ jobs:
       - secure: fM0VMHDML7L9Sz+9zn/TkA8wpSFVbm7lDp1kvJWcfbl66/7hoFfOKa9x2QbhIXUf7W95K5ksEJtmQjxKVQ1eAbjLbkzI3/vGjD8Buy1ZSUBCKpwQmWRZlMqAsvAx3aUhOzZQqejcncTHN57JYJ1DqfY7+Y0gAkFWwN9Bvwwr7jz8zQda4eH6u5dZzSPxh9GxftkuC3vFQH8hg0ugcvNcKhXrAsvcsfOgXr5D39hLTubn8+VAdKExvpt381SLZLAmU5flUCpPqFbpa3x+DIQgugnlisjAMOQw7VOVxqUpp5vuKcnOWdcqfWucvbOzI2E4vcpHmdT87A8yPQQ8TOzZRuTW4NwWyTiMh9bGmVeOXi1rFfX0m5Y5plxQGEZoWPCSWEsm5LGw3/mMg/SxJlcGYIidF35IOeXd2J+DeVyxeN9onDe8NnSQfxVTds6slGM8WystgLKWP6B+3Odo1XlwUUZi0clcWTaoc4aaWS/3P4I0oJybDWHVJGoEceaBQzs9gg3ENe3wpTvkuiWUTb5tTNsht2xBtRu5OQg9tU1wVmNvPRwCxCYirdRbdn7Wh7hlX1gRIUrT4+W/hhXdcP/ldRvwFGa79JctbLBKuGgoSsIO+lmfjM8DMQn/OpCVCBGru1+liysB0JLphv2R8iy5gAzrlhRGeM/mKw8A/BxNhPI= # DOCKER_PASS
       - COMMIT=${TRAVIS_COMMIT::8}
       language: java
+      services:
+        - docker
       addons:
         apt:
           packages:
             - oracle-java8-installer
       jdk:
         - oraclejdk8
-      services:
-        - docker
       after_success:
         - ./gradlew jacocoTestReport coveralls
         - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
