@@ -21,7 +21,7 @@ class JwtUserDetailsService(val userRepository: UserRepository): UserDetailsServ
         }
 }
 
-internal fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.password!!)
+internal fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.passwordHash!!)
 
 class JwtUser(@JsonIgnore val id: String, private val username: String, private val password: String): UserDetails {
 

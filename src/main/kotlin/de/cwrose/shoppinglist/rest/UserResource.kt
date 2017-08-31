@@ -3,22 +3,27 @@ package de.cwrose.shoppinglist.rest
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
 import org.springframework.http.ResponseEntity
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.util.UriComponentsBuilder
 
 
 @RestController
 @RequestMapping("/users")
-class UserResource(val userRepository: UserRepository) {
+class UserResource(val userRepository: UserRepository, val passwordEncoder: PasswordEncoder) {
 
     @PostMapping
     fun index(@RequestBody user: User, uriComponentsBuilder: UriComponentsBuilder): ResponseEntity<Void> =
         when (userRepository.findByUsername(user.username!!)) {
-            null -> userRepository.save(user).let {
-                    uriComponentsBuilder.path("/users/{id}").buildAndExpand(it.id)
+            null -> user.apply {
+                passwordHash = passwordEncoder.encode(user.password)
+            }.let {
+                userRepository.save(user).let {
+                uriComponentsBuilder.path("/users/{id}").buildAndExpand(it.id)
                 }.let {
                     ResponseEntity.created(it.toUri())
-                }.build()
+                }
+            }.build()
             else -> ResponseEntity.ok().build()
         }
 
@@ -29,7 +34,7 @@ class UserResource(val userRepository: UserRepository) {
     fun entry(@PathVariable("user_id") user_id: String, @RequestBody user: User) =
         userRepository.getOne(user_id).apply {
             username = user.username
-            password = user.password
+            passwordHash = passwordEncoder.encode(user.password)
         } .let {
             userRepository.save(it)
         }

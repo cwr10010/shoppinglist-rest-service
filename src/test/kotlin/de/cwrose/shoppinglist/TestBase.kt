@@ -37,11 +37,11 @@ open class TestBase {
 
     @Before
     open fun setup() {
-        userRepository.save(User(username=ADMIN.json["username"] as String, password=passwordEncoder.encode(ADMIN.json["password"] as String)))
+        userRepository.save(User(username=ADMIN.json["username"] as String, passwordHash=passwordEncoder.encode(ADMIN.json["password"] as String)))
     }
 
     @After
-    fun destroy() {
+    open fun destroy() {
         transactionTemplate.execute {
             userRepository.deleteByUsername(username=ADMIN.json["username"] as String)
         }
@@ -53,7 +53,7 @@ open class TestBase {
         }
     }
 
-    fun refresh(token: String): ResponseEntity<String> {
+    fun refresh(token: String?): ResponseEntity<String> {
         return HttpEntity<String>(standardHeaders(token)).let {
             restTemplate.exchange("/auth", HttpMethod.GET, it, String::class.java)
         }
@@ -63,9 +63,9 @@ open class TestBase {
         return location?.toASCIIString()?.split("/")?.last()
     }
 
-    fun extractToken(token: String): TokenVO {
+    fun extractToken(token: String?): String {
         val gson = Gson()
-        return gson.fromJson(token, TokenVO::class.java)
+        return gson.fromJson(token, TokenVO::class.java).token
     }
 
     data class TokenVO(val token: String)
@@ -89,7 +89,7 @@ open class TestBase {
         }
     }
 
-    fun updateUser(location: URI?, jsonStr: String, token: String): ResponseEntity<UserVO> {
+    fun updateUser(location: URI?, jsonStr: String, token: String?): ResponseEntity<UserVO> {
         return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location, it, UserVO::class.java)
         }
@@ -107,7 +107,7 @@ open class TestBase {
         }
     }
 
-    fun addShoppingListEntry(location: URI?, jsonStr: String, token: String): ResponseEntity<String> {
+    fun addShoppingListEntry(location: URI?, jsonStr: String, token: String?): ResponseEntity<String> {
         return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list", it, String::class.java)
         }
@@ -119,7 +119,7 @@ open class TestBase {
         }
     }
 
-    fun updateShoppingListEntry(location: URI?, id: String, jsonStr: String, token: String): ResponseEntity<ShoppingListEntryVO> {
+    fun updateShoppingListEntry(location: URI?, id: String, jsonStr: String, token: String?): ResponseEntity<ShoppingListEntryVO> {
         return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list/" + id, it, ShoppingListEntryVO::class.java)
         }

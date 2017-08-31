@@ -28,7 +28,12 @@ data class User (
 
         var username: String? = null,
 
+        @Transient
         var password: String? = null,
+
+        @JsonIgnore
+        @Column(name = "password")
+        var passwordHash: String? = null,
 
         @JsonProperty("shopping_list")
         @OneToMany(fetch = FetchType.EAGER)

@@ -1,8 +1,7 @@
 package de.cwrose.shoppinglist
 
-import de.cwrose.shoppinglist.ErrorResponseEntity.Companion.notFound
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.MessageSource
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -12,10 +11,10 @@ import java.util.*
 import javax.persistence.EntityNotFoundException
 
 @ControllerAdvice
-class ExceptionHandlers @Autowired constructor(var messageSource: MessageSource) {
+class ExceptionHandlers(var messageSource: MessageSource) {
 
-    @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class)
-    fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("NOT FOUND")
+    @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class, EmptyResultDataAccessException::class)
+    fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("RESOURCE NOT FOUND")
 }
 
 data class ErrorResponse(val status: HttpStatus, val error:String, val message:String, val timestamp: Date, val bindingErrors: List<String>) {
@@ -23,11 +22,6 @@ data class ErrorResponse(val status: HttpStatus, val error:String, val message:S
     constructor(status: HttpStatus, message:String) : this(status, status.reasonPhrase, message, Date(), ArrayList<String>())
 }
 
-class ErrorResponseEntity: ResponseEntity<ErrorResponse> {
+class ErrorResponseEntity(body: ErrorResponse): ResponseEntity<ErrorResponse>(body, body.status)
 
-    constructor(body:ErrorResponse) : super(body, body.status)
-
-    companion object {
-        fun notFound(message:String) = ErrorResponseEntity(ErrorResponse(HttpStatus.NOT_FOUND, message))
-    }
-}
+internal fun notFound(message:String) = ErrorResponseEntity(ErrorResponse(HttpStatus.NOT_FOUND, message))
