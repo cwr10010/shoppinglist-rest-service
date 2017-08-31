@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.test.context.junit4.SpringRunner
 import java.net.URI
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 
 @RunWith(SpringRunner::class)
@@ -24,22 +23,12 @@ class UserResourceCRUDTest : TestBase() {
     override fun setup() {
         super.setup()
 
-        val authenticate = authenticate("")
+        val authenticate = authenticate()
         token = extractToken(authenticate.body)
         assertEquals(HttpStatus.OK, authenticate.statusCode)
         val response = createUser(USER_1.toString(), token)
         assertEquals(HttpStatus.CREATED, response.statusCode)
         location = response.headers.location
-    }
-
-    @After
-    override fun destroy() {
-        deleteUser(location, token)
-
-        readUser(location, token).let {
-            assertEquals(HttpStatus.NOT_FOUND, it.statusCode)
-        }
-        super.destroy()
     }
 
     @Test
@@ -54,8 +43,8 @@ class UserResourceCRUDTest : TestBase() {
     fun testReadUser() {
         readUser(location, token).let {
             assertEquals(HttpStatus.OK, it.statusCode)
-            assertEquals(HttpStatus.OK, it.statusCode)
             assertEquals("Max", it.body.username)
+            assertEquals(null, it.body.password)
         }
     }
 
@@ -92,5 +81,15 @@ class UserResourceCRUDTest : TestBase() {
         readUser(location, token).let {
             assertEquals(HttpStatus.NOT_FOUND, it.statusCode)
         }
+    }
+
+    @After
+    override fun destroy() {
+        deleteUser(location, token)
+
+        readUser(location, token).let {
+            assertEquals(HttpStatus.NOT_FOUND, it.statusCode)
+        }
+        super.destroy()
     }
 }

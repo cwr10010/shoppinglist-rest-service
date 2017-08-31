@@ -18,16 +18,16 @@ import kotlin.test.assertEquals
 class AuthenticationResourceTest: TestBase() {
 
     @Test
-    fun authenticate() {
-        val authenticate = authenticate("")
+    fun testAuthenticate() {
+        val authenticate = authenticate()
 
         assertEquals(HttpStatus.OK, authenticate.statusCode)
         assert(!StringUtils.isEmpty(authenticate.body))
     }
 
     @Test
-    fun refresh() {
-        val authenticate = authenticate("")
+    fun testRefresh() {
+        val authenticate = authenticate()
 
         assertEquals(HttpStatus.OK, authenticate.statusCode)
 
@@ -38,14 +38,14 @@ class AuthenticationResourceTest: TestBase() {
     }
 
     @Test
-    fun refreshNoToken() {
+    fun testRefreshNoTokenFails() {
 
         val refresh = refresh("")
         assertEquals(HttpStatus.BAD_REQUEST, refresh.statusCode)
     }
 
     @Test
-    fun refreshExpiredToken() {
+    fun testRefreshExpiredTokenFails() {
 
         val token = generateToken(
                 JwtUser("id", ADMIN.json["username"] as String, "password"),
@@ -55,7 +55,7 @@ class AuthenticationResourceTest: TestBase() {
     }
 
     @Test
-    fun checkUnauthorized() {
+    fun testCheckUnauthorizedAccesIsForbidden() {
 
         val response = createUser(USER_1.toString(), "")
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)

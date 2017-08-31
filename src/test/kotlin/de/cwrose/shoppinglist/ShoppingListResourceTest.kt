@@ -26,12 +26,12 @@ class ShoppingListResourceTest: TestBase() {
     override fun setup() {
         super.setup()
 
-        val authenticateAdmin = authenticate("")
+        val authenticateAdmin = authenticate()
         assertEquals(HttpStatus.OK, authenticateAdmin.statusCode)
         val adminToken = extractToken(authenticateAdmin.body)
         val response = createUser(USER_1.toString(), adminToken)
         assertEquals(HttpStatus.CREATED, response.statusCode)
-        val authenticate = authenticate("", user= USER_1)
+        val authenticate = authenticate(USER_1)
         assertEquals(HttpStatus.OK, authenticate.statusCode)
         token = extractToken(authenticate.body)
         location = response.headers.location
