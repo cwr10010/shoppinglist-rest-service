@@ -1,9 +1,0 @@
-<h3>Top Shopping List Items</h3>
-<div class="grid grid-pad">
-  <a *ngFor="let item of shoppinglist" [routerLink]="['/details', item.id]" class="col-1-4">
-    <div class="module item">
-      <h4>{{item.name}}</h4>
-    </div>
-  </a>
-</div>
-<item-search></item-search>
