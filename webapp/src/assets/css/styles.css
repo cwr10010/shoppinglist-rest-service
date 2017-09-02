@@ -1,0 +1,81 @@
+@font-face {
+  font-family: 'EBGaramond12Regular';
+  src:  url('../../assets/fonts/ebgaramond12-regular-webfont.woff2') format('woff2'),
+        url('../../assets/fonts/ebgaramond12-regular-webfont.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NobileRegular';
+  src:  url('../../assets/fonts/nobile-regular-webfont.woff2') format('woff2'),
+        url('../../assets/fonts/nobile-regular-webfont.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Master Styles */
+h1 {
+  color: #369;
+  font-family: 'NobileRegular';
+  font-size: 250%;
+}
+h2, h3 {
+  color: #444;
+  font-family: 'NobileRegular';
+  font-weight: lighter;
+}
+body {
+  margin: 2em;
+}
+body, input[text], button {
+  color: #888;
+  font-family: 'EBGaramond12Regular';
+}
+a {
+  cursor: pointer;
+  cursor: hand;
+}
+button {
+  font-family: Arial;
+  background-color: #eee;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  cursor: hand;
+}
+button:hover {
+  background-color: #cfd8dc;
+}
+button:disabled {
+  background-color: #eee;
+  color: #aaa;
+  cursor: auto;
+}
+
+/* Navigation link styles */
+nav a {
+  padding: 5px 10px;
+  text-decoration: none;
+  margin-right: 10px;
+  margin-top: 10px;
+  display: inline-block;
+  background-color: #eee;
+  border-radius: 4px;
+}
+nav a:visited, a:link {
+  color: #607D8B;
+}
+nav a:hover {
+  color: #039be5;
+  background-color: #CFD8DC;
+}
+nav a.active {
+  color: #039be5;
+}
+
+/* everywhere else */
+* {
+  font-family: 'NobileRegular';
+}
