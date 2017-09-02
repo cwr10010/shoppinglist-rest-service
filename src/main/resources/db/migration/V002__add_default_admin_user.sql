@@ -1,0 +1,1 @@
+INSERT INTO user (id, username, password, created, modified) values ('e3a7dc43-9ed3-4f9c-b5e4-8cb6493885a8', 'admin', '$2a$10$xqXWmTFmKpOLJByx5qB3semrkBu/KrVrzM5/uYVC1vuYWdOlDSpBq',  CURRENT_TIMESTAMP,  CURRENT_TIMESTAMP );
