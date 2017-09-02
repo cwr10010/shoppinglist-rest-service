@@ -3,8 +3,8 @@ CREATE TABLE user (
  id VARCHAR(200) PRIMARY KEY,
  username VARCHAR(255) NOT NULL,
  password VARCHAR(255) NOT NULL,
- created DATE NOT NULL,
- modified DATE NOT NULL,
+ created DATETIME NOT NULL,
+ modified DATETIME NOT NULL,
  CONSTRAINT idx_unique_username UNIQUE (username)
 )
 ENGINE=InnoDB;
@@ -16,8 +16,8 @@ CREATE TABLE shopping_list (
  item_order INT NOT NULL,
  item_read CHAR(1) NOT NULL,
  user_id VARCHAR(200) NOT NULL,
- created DATE NOT NULL,
- modified DATE,
+ created DATETIME NOT NULL,
+ modified DATETIME,
  FOREIGN KEY (user_id)
         REFERENCES user(id)
 )
