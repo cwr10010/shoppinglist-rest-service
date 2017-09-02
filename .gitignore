@@ -2,6 +2,3 @@
 .gradle
 build
 **/.DS_Store
-webapp/dist
-webapp/node_modules
-webapp/package-lock.json
