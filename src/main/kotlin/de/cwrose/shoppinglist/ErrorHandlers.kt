@@ -1,5 +1,6 @@
 package de.cwrose.shoppinglist
 
+import io.jsonwebtoken.MalformedJwtException
 import org.springframework.context.MessageSource
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.http.HttpStatus
@@ -15,13 +16,18 @@ class ExceptionHandlers(var messageSource: MessageSource) {
 
     @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class, EmptyResultDataAccessException::class)
     fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("RESOURCE NOT FOUND")
+
+    @ExceptionHandler(MalformedJwtException::class)
+    fun malformedException(exception: MalformedJwtException, locale: Locale): ErrorResponseEntity = badRequest("TOKEN INVALID")
 }
 
 data class ErrorResponse(val status: HttpStatus, val error:String, val message:String, val timestamp: Date, val bindingErrors: List<String>) {
 
-    constructor(status: HttpStatus, message:String) : this(status, status.reasonPhrase, message, Date(), ArrayList<String>())
+    constructor(status: HttpStatus, message:String) : this(status, status.reasonPhrase, message, Date(), listOf())
 }
 
 class ErrorResponseEntity(body: ErrorResponse): ResponseEntity<ErrorResponse>(body, body.status)
 
 internal fun notFound(message:String) = ErrorResponseEntity(ErrorResponse(HttpStatus.NOT_FOUND, message))
+
+internal fun badRequest(message: String) = ErrorResponseEntity(ErrorResponse(HttpStatus.BAD_REQUEST, message))
