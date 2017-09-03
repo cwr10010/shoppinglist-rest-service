@@ -34,11 +34,20 @@ class AuthenticationResourceTest: TestBase() {
         val refresh = refresh(extractToken(authenticate.body))
         assertEquals(HttpStatus.OK, refresh.statusCode)
         assert(!StringUtils.isEmpty(refresh.body))
-
     }
 
     @Test
-    fun testRefreshNoTokenFails() {
+    fun testCheckMalformedTokenBadRequest() {
+        val authenticate = authenticate()
+
+        assertEquals(HttpStatus.OK, authenticate.statusCode)
+
+        val refresh = refresh("0123456789ABCDEF")
+        assertEquals(HttpStatus.BAD_REQUEST, refresh.statusCode)
+    }
+
+    @Test
+    fun testRefreshNoTokenBadRequest() {
 
         val refresh = refresh("")
         assertEquals(HttpStatus.BAD_REQUEST, refresh.statusCode)

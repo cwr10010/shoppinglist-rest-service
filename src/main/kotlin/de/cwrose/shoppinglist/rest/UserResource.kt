@@ -2,6 +2,7 @@ package de.cwrose.shoppinglist.rest
 
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
+import mu.KLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
@@ -19,7 +20,8 @@ class UserResource(val userRepository: UserRepository, val passwordEncoder: Pass
                 passwordHash = passwordEncoder.encode(user.password)
             }.let {
                 userRepository.save(user).let {
-                uriComponentsBuilder.path("/users/{id}").buildAndExpand(it.id)
+                    logger.info("Added user ${it}")
+                    uriComponentsBuilder.path("/users/{id}").buildAndExpand(it.id)
                 }.let {
                     ResponseEntity.created(it.toUri())
                 }
@@ -31,15 +33,20 @@ class UserResource(val userRepository: UserRepository, val passwordEncoder: Pass
     fun entry(@PathVariable("user_id") user_id: String) = userRepository.getOne(user_id)
 
     @PostMapping("{user_id}")
-    fun entry(@PathVariable("user_id") user_id: String, @RequestBody user: User) =
+    fun entry(@PathVariable("user_id") user_id: String, @RequestBody user: User): User =
         userRepository.getOne(user_id).apply {
             username = user.username
             passwordHash = passwordEncoder.encode(user.password)
         } .let {
+            logger.info("Updating user ${it}")
             userRepository.save(it)
         }
 
     @DeleteMapping("{user_id}")
-    fun delete(@PathVariable("user_id") user_id: String) = userRepository.delete(user_id)
+    fun delete(@PathVariable("user_id") user_id: String) {
+        logger.info("Deleted ${user_id}")
+        userRepository.delete(user_id)
+    }
 
+    companion object: KLogging()
 }

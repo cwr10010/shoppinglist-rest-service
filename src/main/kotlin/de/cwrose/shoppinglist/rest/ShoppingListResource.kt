@@ -3,6 +3,7 @@ package de.cwrose.shoppinglist.rest
 import de.cwrose.shoppinglist.ShoppingListItem
 import de.cwrose.shoppinglist.ShoppingListsRepository
 import de.cwrose.shoppinglist.UserRepository
+import mu.KLogging
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -20,6 +21,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             }
             shoppingList += list
         } .let {
+            logger.info("Added ${list.map { it.id }} to user ${user_id}")
             shoppingLists.save(list)
             users.save(it)
         } .shoppingList.sortedBy { it.order }
@@ -35,6 +37,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             order       = shoppingListItem.order
             read        = shoppingListItem.read
         } .let {
+            logger.info("Updated ${it} for user ${user_id}")
             shoppingLists.save(it)
         }
 
@@ -47,7 +50,12 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             shoppingLists.getOne(id).let {
                 user.shoppingList -= it
             }.let {
+                logger.info("Deleting ${it} for user ${user_id}")
                 users.save(user)
             }
         }.shoppingList.sortedBy { it.order }
+
+
+    companion object: KLogging()
+
 }
