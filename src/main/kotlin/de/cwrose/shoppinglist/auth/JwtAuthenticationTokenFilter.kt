@@ -18,7 +18,12 @@ import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import java.io.IOException
 import java.io.Serializable
 import javax.servlet.FilterChain
@@ -73,6 +78,15 @@ class JwtAuthenticationEntryPoint : AuthenticationEntryPoint, Serializable {
 }
 
 @Configuration
+class JwtMvcConfig: WebMvcConfigurerAdapter() {
+
+    override fun addCorsMappings(registry: CorsRegistry) {
+        registry.addMapping("/**")
+                .allowedMethods("GET", "POST", "DELETE");
+    }
+}
+
+@Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 class JwtWebSecurityConfig (val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService) : WebSecurityConfigurerAdapter() {
@@ -88,7 +102,21 @@ class JwtWebSecurityConfig (val jwtAuthenticationEntryPoint: JwtAuthenticationEn
     @Bean
     fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userDetailsService)
 
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.setAllowedOrigins(listOf("*"))
+        configuration.setAllowedMethods(listOf("GET", "POST", "DELETE"));
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(listOf("Authorization", "Cache-Control", "Content-Type"));
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     override fun configure(http: HttpSecurity) {
+        http.cors();
+
         http.csrf().disable()
                 .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()

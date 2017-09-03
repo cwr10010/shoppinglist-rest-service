@@ -1,7 +1,6 @@
 package de.cwrose.shoppinglist.rest
 
 import de.cwrose.shoppinglist.auth.*
-import io.jsonwebtoken.JwtException
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
