@@ -59,6 +59,7 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
                     assertEquals(false, it[0].read)
+                    assertEquals(extractId(location), it[0].user_id)
                 }
             }
         }
@@ -79,10 +80,13 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
                     assertEquals(false, it[0].read)
+
+                    assertEquals(extractId(location), it[0].user_id)
                     assertEquals("Milk", it[1].name)
                     assertEquals("Sweet Milk", it[1].description)
                     assertEquals(1, it[1].order)
                     assertEquals(true, it[1].read)
+                    assertEquals(extractId(location), it[1].user_id)
                 }
             }
         }
@@ -117,6 +121,7 @@ class ShoppingListResourceTest: TestBase() {
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
                     assertEquals(true, it[0].read)
+                    assertEquals(extractId(location), it[0].user_id)
                 }
             }
         }
@@ -131,6 +136,7 @@ class ShoppingListResourceTest: TestBase() {
                 assertEquals("Tasty Cheese", it[0].description)
                 assertEquals(0, it[0].order)
                 assertEquals(true, it[0].read)
+                assertEquals(extractId(location), it[0].user_id)
             }
         }
     }
@@ -156,6 +162,7 @@ class ShoppingListResourceTest: TestBase() {
                         assertEquals("Tasty Cheese", getResponse.body.description)
                         assertEquals(0, getResponse.body.order)
                         assertEquals(true, getResponse.body.read)
+                        assertEquals(extractId(location), getResponse.body.user_id)
                     }
 
                 }
@@ -191,6 +198,8 @@ class ShoppingListResourceTest: TestBase() {
                             assertEquals("Sweet Milk", sle.body.description)
                             assertEquals(1, sle.body.order)
                             assertEquals(true, sle.body.read)
+                            assertEquals(extractId(location), sle.body.user_id)
+
                         }
                     }
                 }

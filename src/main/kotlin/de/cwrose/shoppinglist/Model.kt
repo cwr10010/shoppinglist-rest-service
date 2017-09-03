@@ -20,7 +20,11 @@ data class ShoppingListItem(
 
         @Column(name = "item_read")
         @Type(type="yes_no")
-        var read: Boolean = false
+        var read: Boolean = false,
+
+        @JsonProperty("user_id")
+        @Column(name = "user_id")
+        var userId: String? = null
 ): EntityBase()
 
 @Entity @Table(name = "USER")
@@ -44,7 +48,7 @@ data class User (
 @MappedSuperclass
 abstract class EntityBase (
 
-        @JsonProperty("user_id")
+        @JsonProperty("id")
         @Id
         var id: String? = null,
 

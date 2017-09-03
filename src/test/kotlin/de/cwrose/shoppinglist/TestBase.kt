@@ -162,5 +162,5 @@ class Json() {
     override fun toString(): String = json.toString()
 }
 
-data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null, var read: Boolean? = null)
+data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null, var read: Boolean? = null, var user_id: String?)
 data class UserVO(var username: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())

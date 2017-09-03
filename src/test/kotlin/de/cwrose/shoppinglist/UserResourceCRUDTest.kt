@@ -51,7 +51,6 @@ class UserResourceCRUDTest : TestBase() {
     @Test
     fun testUpdateUser() {
         Json {
-            "user_id" To extractId(location)
             "username" To "Mini"
             "password" To "p4ssw0rd2"
             "shopping_list" To emptyList<Json>()
