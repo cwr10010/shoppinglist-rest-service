@@ -6,7 +6,7 @@ import org.springframework.security.crypto.codec.Base64
 import java.util.Date
 
 private val SECRET = Base64.encode("ABC".toByteArray())
-private val EXPIRATION = 100L
+private val EXPIRATION = 1000L
 
 internal fun validateToken(token: String, userDetails: UserDetails) = getUsernameFromToken(token).let {
         userDetails.username == it && !isTokenExpired(token)
@@ -29,9 +29,9 @@ private fun getAllClaimsFromToken(token: String) = Jwts.parser()
         .parseClaimsJws(token)
         .getBody()
 
-internal fun generateToken(userDetails: UserDetails, issueDate: Date = Date()) = Jwts.builder()
-        .setClaims(hashMapOf())
-        .setSubject(userDetails.username)
+internal fun generateToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
+        .setClaims(hashMapOf("id" to user.id as Any))
+        .setSubject(user.username)
         .setIssuedAt(issueDate)
         .setExpiration(Date(issueDate.time + EXPIRATION * 1000))
         .signWith(SignatureAlgorithm.HS512, SECRET)
