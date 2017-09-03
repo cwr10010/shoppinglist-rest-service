@@ -20,7 +20,7 @@ class UserResource(val userRepository: UserRepository, val passwordEncoder: Pass
                 passwordHash = passwordEncoder.encode(user.password)
             }.let {
                 userRepository.save(user).let {
-                    logger.info("Added user ${it}")
+                    logger.info("Added user ${it.id}")
                     uriComponentsBuilder.path("/users/{id}").buildAndExpand(it.id)
                 }.let {
                     ResponseEntity.created(it.toUri())
@@ -38,13 +38,13 @@ class UserResource(val userRepository: UserRepository, val passwordEncoder: Pass
             username = user.username
             passwordHash = passwordEncoder.encode(user.password)
         } .let {
-            logger.info("Updating user ${it}")
+            logger.info("Updating user ${it.id}")
             userRepository.save(it)
         }
 
     @DeleteMapping("{user_id}")
     fun delete(@PathVariable("user_id") user_id: String) {
-        logger.info("Deleted ${user_id}")
+        logger.info("Deleting ${user_id}")
         userRepository.delete(user_id)
     }
 

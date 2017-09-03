@@ -21,8 +21,8 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             }
             shoppingList += list
         } .let {
-            logger.info("Added ${list.map { it.id }} to user ${user_id}")
             shoppingLists.save(list)
+            logger.info("Added List of ShoppingListItems ${list.map { it.id }} to User ${user_id}")
             users.save(it)
         } .shoppingList.sortedBy { it.order }
 
@@ -37,7 +37,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             order       = shoppingListItem.order
             read        = shoppingListItem.read
         } .let {
-            logger.info("Updated ${it} for user ${user_id}")
+            logger.info("Updated ShoppingListItem ${id} for User ${user_id}")
             shoppingLists.save(it)
         }
 
@@ -48,9 +48,9 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         users.getOne(user_id).let {
             user ->
             shoppingLists.getOne(id).let {
+                logger.info("Deleting ShoppingListItem ${id} for User ${user_id}")
                 user.shoppingList -= it
             }.let {
-                logger.info("Deleting ${it} for user ${user_id}")
                 users.save(user)
             }
         }.shoppingList.sortedBy { it.order }
