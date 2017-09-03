@@ -6,7 +6,7 @@ import de.cwrose.shoppinglist.UserRepository
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("users/{user_id}/shopping-list")
+@RequestMapping("/users/{user_id}/shopping-list")
 class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users: UserRepository) {
 
     @GetMapping
