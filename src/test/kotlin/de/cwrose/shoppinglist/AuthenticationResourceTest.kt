@@ -51,7 +51,7 @@ class AuthenticationResourceTest: TestBase() {
                 JwtUser("id", ADMIN.json["username"] as String, "password"),
                 Date(LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli()))
         val refresh = refresh(token)
-        assertEquals(HttpStatus.BAD_REQUEST, refresh.statusCode)
+        assertEquals(HttpStatus.FORBIDDEN, refresh.statusCode)
     }
 
     @Test

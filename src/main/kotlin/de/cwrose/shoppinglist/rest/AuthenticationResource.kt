@@ -1,11 +1,10 @@
 package de.cwrose.shoppinglist.rest
 
-import de.cwrose.shoppinglist.auth.JwtUserDetailsService
-import de.cwrose.shoppinglist.auth.generateToken
-import de.cwrose.shoppinglist.auth.isTokenExpired
-import de.cwrose.shoppinglist.auth.refreshToken
+import de.cwrose.shoppinglist.auth.*
+import io.jsonwebtoken.JwtException
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
@@ -23,7 +22,7 @@ class AuthenticationResource (val authenticationManager: AuthenticationManager, 
         }
 
         return userDetailsService.loadUserByUsername(authenticationRequest.username).let {
-            userDetails ->  generateToken(userDetails)
+            userDetails ->  generateToken(userDetails as JwtUser)
         }.let {
             token -> ResponseEntity.ok(JwtAuthenticationResponse(token))
         }
@@ -34,15 +33,15 @@ class AuthenticationResource (val authenticationManager: AuthenticationManager, 
         val authorizationHeader = request.getHeader("Authorization")
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ") && authorizationHeader.length > 10) {
-            var token = authorizationHeader.substring(7)
-            return when {
-                !isTokenExpired(token) -> refreshToken(token).let {
+            val token = authorizationHeader.substring(7)
+            if (!isTokenExpired(token)) {
+                return refreshToken(token).let {
                     ResponseEntity.ok(JwtAuthenticationResponse(token))
                 }
-                else -> ResponseEntity.badRequest().body(null)
             }
         }
-        return ResponseEntity.badRequest().body(null)
+
+        throw BadCredentialsException("Token missing")
     }
 }
 

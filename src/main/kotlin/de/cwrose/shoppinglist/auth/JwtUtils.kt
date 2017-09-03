@@ -12,11 +12,7 @@ internal fun validateToken(token: String, userDetails: UserDetails) = getUsernam
         userDetails.username == it && !isTokenExpired(token)
     }
 
-internal fun isTokenExpired(token: String) = try {
-        getAllClaimsFromToken(token).expiration.before(Date())
-    } catch (ex: ExpiredJwtException) {
-        true
-    }
+internal fun isTokenExpired(token: String) = getAllClaimsFromToken(token).expiration.before(Date())
 
 internal fun getUsernameFromToken(token: String) = try {
         getAllClaimsFromToken(token).subject
