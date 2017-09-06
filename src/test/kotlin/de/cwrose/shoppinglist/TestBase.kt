@@ -107,6 +107,12 @@ open class TestBase {
         }
     }
 
+    fun searchShoppingList(location: URI?, term: String, token: String?) :ResponseEntity<String> {
+        return HttpEntity<String>(standardHeaders(token)).let {
+            restTemplate.exchange(location?.toASCIIString() + "/shopping-list?term=$term", HttpMethod.GET, it, String::class.java)
+        }
+    }
+
     fun addShoppingListEntry(location: URI?, jsonStr: String, token: String?): ResponseEntity<String> {
         return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list", it, String::class.java)

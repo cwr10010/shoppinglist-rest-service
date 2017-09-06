@@ -52,11 +52,9 @@ abstract class EntityBase (
         @Id
         var id: String? = null,
 
-        @JsonIgnore
         @Temporal(TemporalType.TIMESTAMP)
         var created: Date? = null,
 
-        @JsonIgnore
         @Temporal(TemporalType.TIMESTAMP)
         var modified: Date? = null
 ) {

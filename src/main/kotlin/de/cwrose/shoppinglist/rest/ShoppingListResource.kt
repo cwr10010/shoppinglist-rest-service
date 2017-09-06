@@ -11,7 +11,20 @@ import org.springframework.web.bind.annotation.*
 class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users: UserRepository) {
 
     @GetMapping
-    fun index(@PathVariable("user_id") user_id: String) = users.findOne(user_id).shoppingList
+    fun index(
+            @PathVariable("user_id") user_id: String,
+            @RequestParam("term", required = false) term: String?): List<ShoppingListItem> {
+        return users.findOne(user_id).shoppingList.let {
+            logger.info("find all shopping list items for user $user_id")
+            when (term) {
+                null -> it
+                else -> it.filter {
+                    logger.info("filter shopping list for user $user_id with term $term")
+                    it.name!!.contains(term, true)
+                }
+            } .sortedBy { it.order }
+        }
+    }
 
     @PostMapping
     fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListItem>) =
@@ -22,7 +35,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             shoppingList += list
         } .let {
             shoppingLists.save(list)
-            logger.info("Added List of ShoppingListItems ${list.map { it.id }} to User ${user_id}")
+            logger.info("Added List of ShoppingListItems ${list.map { it.id }} to User $user_id")
             users.save(it)
         } .shoppingList.sortedBy { it.order }
 
@@ -37,7 +50,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
             order       = shoppingListItem.order
             read        = shoppingListItem.read
         } .let {
-            logger.info("Updated ShoppingListItem ${id} for User ${user_id}")
+            logger.info("Updated ShoppingListItem $id for User $user_id")
             shoppingLists.save(it)
         }
 
@@ -48,7 +61,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
         users.getOne(user_id).let {
             user ->
             shoppingLists.getOne(id).let {
-                logger.info("Deleting ShoppingListItem ${id} for User ${user_id}")
+                logger.info("Deleting ShoppingListItem $id for User $user_id")
                 user.shoppingList -= it
             }.let {
                 users.save(user)
