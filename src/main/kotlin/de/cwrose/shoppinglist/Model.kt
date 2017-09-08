@@ -45,6 +45,20 @@ data class User (
         var shoppingList: Set<ShoppingListItem> = emptySet()
 ): EntityBase()
 
+@Entity @Table(name = "REFRESH_TOKEN")
+data class RefreshToken (
+
+        @ManyToOne(fetch = FetchType.EAGER)
+        @JoinColumn(name="user_id")
+        var user: User? = null,
+
+        @Temporal(TemporalType.TIMESTAMP)
+        var expires: Date? = null,
+
+        @Type(type="yes_no")
+        var valid: Boolean? = true
+): EntityBase()
+
 @MappedSuperclass
 abstract class EntityBase (
 
@@ -77,6 +91,10 @@ interface ShoppingListsRepository: JpaRepository<ShoppingListItem, String>
 interface UserRepository: JpaRepository<User, String> {
 
     fun findByUsername(username: String): User?
+}
 
-    fun deleteByUsername(username: String)
+@Repository
+interface RefreshTokenRepository: JpaRepository<RefreshToken, String> {
+
+    fun findAllByUser(user:User): List<RefreshToken>
 }

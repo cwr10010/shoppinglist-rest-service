@@ -14,7 +14,7 @@ import java.net.URI
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
 class ShoppingListResourceTest: TestBase() {
 
     var location: URI? = null
@@ -25,15 +25,19 @@ class ShoppingListResourceTest: TestBase() {
     override fun setup() {
         super.setup()
 
-        val authenticateAdmin = authenticate()
-        assertEquals(HttpStatus.OK, authenticateAdmin.statusCode)
-        val adminToken = extractToken(authenticateAdmin.body)
-        val response = createUser(USER_1.toString(), adminToken)
-        assertEquals(HttpStatus.CREATED, response.statusCode)
-        val authenticate = authenticate(USER_1)
-        assertEquals(HttpStatus.OK, authenticate.statusCode)
-        token = extractToken(authenticate.body)
-        location = response.headers.location
+        location = authenticate().let {
+            assertEquals(HttpStatus.OK, it.statusCode)
+            extractToken(it.body).let {
+                createUser(USER_1.toString(), it.auth_token).let {
+                    assertEquals(HttpStatus.CREATED, it.statusCode)
+                    it.headers.location
+                }
+            }
+        }
+        token = authenticate(USER_1).let {
+            assertEquals(HttpStatus.OK, it.statusCode)
+            extractToken(it.body).auth_token
+        }
     }
 
     @After
@@ -49,7 +53,7 @@ class ShoppingListResourceTest: TestBase() {
             "description" To "Tasty Cheese"
             "order" To 0
         }.let { entry1 ->
-            addShoppingListEntry(location, "[${entry1.toString()}]", token).let {
+            addShoppingListEntry(location, "[$entry1]", token).let {
                 sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
@@ -70,7 +74,7 @@ class ShoppingListResourceTest: TestBase() {
             "order" To 1
             "read" To true
         }.let { entry2 ->
-            addShoppingListEntry(location, "[${entry2.toString()}]", token).let { sle: ResponseEntity<String> ->
+            addShoppingListEntry(location, "[$entry2]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -106,7 +110,7 @@ class ShoppingListResourceTest: TestBase() {
             "read" To true
         }
 
-        addShoppingListEntry(location, "[${first.toString()}, ${second.toString()}]", token).let {
+        addShoppingListEntry(location, "[$first, $second]", token).let {
             sle: ResponseEntity<String> ->
             assertEquals(HttpStatus.OK, sle.statusCode)
         }
@@ -144,7 +148,7 @@ class ShoppingListResourceTest: TestBase() {
             "order" To 0
             "read" To true
         } .let {
-            entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]", token).let {
+            entry1 -> addShoppingListEntry(location, "[$entry1]", token).let {
                 sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
@@ -182,7 +186,7 @@ class ShoppingListResourceTest: TestBase() {
             "order" To 0
             "read" To true
         } .let {
-            entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]", token).let {
+            entry1 -> addShoppingListEntry(location, "[$entry1]", token).let {
                 addResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, addResponse.statusCode)
                 val gson = Gson()
@@ -211,7 +215,7 @@ class ShoppingListResourceTest: TestBase() {
             "order" To 0
             "read" To false
         } .let {
-            entry1 -> addShoppingListEntry(location, "[${entry1.toString()}]", token).let {
+            entry1 -> addShoppingListEntry(location, "[$entry1]", token).let {
                 sleResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sleResponse.statusCode)
                 val gson = Gson()
@@ -247,7 +251,7 @@ class ShoppingListResourceTest: TestBase() {
             "description" To "Tasty Cheese"
             "order" To 0
         } .let { entry1 ->
-            addShoppingListEntry(location, "[${entry1.toString()}]", token).let {
+            addShoppingListEntry(location, "[$entry1]", token).let {
                 addResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, addResponse.statusCode)
                 val gson = Gson()

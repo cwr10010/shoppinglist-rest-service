@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
 class UserResourceCRUDTest : TestBase() {
 
     var location: URI? = null
@@ -23,12 +23,14 @@ class UserResourceCRUDTest : TestBase() {
     override fun setup() {
         super.setup()
 
-        val authenticate = authenticate()
-        token = extractToken(authenticate.body)
-        assertEquals(HttpStatus.OK, authenticate.statusCode)
-        val response = createUser(USER_1.toString(), token)
-        assertEquals(HttpStatus.CREATED, response.statusCode)
-        location = response.headers.location
+        token = authenticate().let {
+            assertEquals(HttpStatus.OK, it.statusCode)
+            extractToken(it.body).auth_token
+        }
+        location = createUser(USER_1.toString(), token).let {
+            assertEquals(HttpStatus.CREATED, it.statusCode)
+            it.headers.location
+        }
     }
 
     @Test

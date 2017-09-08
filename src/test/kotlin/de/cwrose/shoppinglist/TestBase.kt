@@ -19,6 +19,9 @@ open class TestBase {
     lateinit var userRepository: UserRepository
 
     @Autowired
+    lateinit var refreshTokenRepository: RefreshTokenRepository
+
+    @Autowired
     lateinit var restTemplate: TestRestTemplate
 
     @Autowired
@@ -37,13 +40,21 @@ open class TestBase {
 
     @Before
     open fun setup() {
-        userRepository.save(User(username=ADMIN.json["username"] as String, passwordHash=passwordEncoder.encode(ADMIN.json["password"] as String)))
+        transactionTemplate.execute {
+            userRepository.save(User(username = ADMIN.json["username"] as String, passwordHash = passwordEncoder.encode(ADMIN.json["password"] as String)))
+        }
     }
 
     @After
     open fun destroy() {
         transactionTemplate.execute {
-            userRepository.deleteByUsername(username=ADMIN.json["username"] as String)
+            userRepository.findByUsername(ADMIN.json["username"] as String).let {
+                user ->
+                refreshTokenRepository.findAllByUser(user!!).let {
+                    tokens -> refreshTokenRepository.delete(tokens)
+                }
+                userRepository.delete(user)
+            }
         }
     }
 
@@ -54,8 +65,14 @@ open class TestBase {
     }
 
     fun refresh(token: String?): ResponseEntity<String> {
-        return HttpEntity<String>(standardHeaders(token)).let {
+        return HttpEntity<String>(refreshCookieToken(token)).let {
             restTemplate.exchange("/auth", HttpMethod.GET, it, String::class.java)
+        }
+    }
+
+    fun logout(token: String?): ResponseEntity<String> {
+        return HttpEntity<String>(standardHeaders(token)).let {
+            restTemplate.exchange("/auth/logout", HttpMethod.GET, it, String::class.java)
         }
     }
 
@@ -63,18 +80,43 @@ open class TestBase {
         return location?.toASCIIString()?.split("/")?.last()
     }
 
-    fun extractToken(token: String?): String {
+    fun extractToken(token: String?): TokenVO {
         val gson = Gson()
-        return gson.fromJson(token, TokenVO::class.java).token
+        return gson.fromJson(token, TokenVO::class.java)
     }
 
-    data class TokenVO(val token: String)
+    data class TokenVO(
+            val auth_token: String,
+            val id_token: String,
+            val expires: Int)
 
-    fun standardHeaders(token: String?): HttpHeaders {
+    private fun standardHeaders(token: String?): HttpHeaders {
         return HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
             add("Authorization", "Bearer $token")
         }
+    }
+
+    private fun refreshCookieToken(tokenCookie: String?): HttpHeaders {
+        return HttpHeaders().apply {
+            add("Cookie", tokenCookie)
+        }
+    }
+
+    fun invalidateAllRefreshToken(username: String = ADMIN.json["username"] as String) {
+        userRepository.findByUsername(username).let {
+            refreshTokenRepository.findAllByUser(it!!).forEach {
+                it.apply {
+                    valid = false
+                }.let {
+                    refreshTokenRepository.save(it)
+                }
+            }
+        }
+    }
+
+    fun extractRefreshTokenFromCookie(responseEntity: ResponseEntity<String>): String {
+        return responseEntity.headers!!["Set-Cookie"]!![0]
     }
 
     fun createUser(jsonStr: String, token: String?): ResponseEntity<String> {
@@ -141,11 +183,6 @@ open class TestBase {
 val USER_1 = Json {
     "username" To "Max"
     "password" To "p4ssw0rd"
-}
-
-val USER_2 = Json {
-    "username" To "Mini"
-    "password" To "p4ssw0rd2"
 }
 
 val ADMIN = Json {

@@ -19,9 +19,6 @@ class ExceptionHandlers(var messageSource: MessageSource) {
     @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class, EmptyResultDataAccessException::class)
     fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("RESOURCE NOT FOUND")
 
-    @ExceptionHandler(MalformedJwtException::class)
-    fun malformedException(exception: MalformedJwtException, locale: Locale): ErrorResponseEntity = badRequest("TOKEN INVALID")
-
     @ExceptionHandler(BadCredentialsException::class)
     fun badCredentialsException(exception: BadCredentialsException, locale: Locale): ErrorResponseEntity = badRequest(exception.message)
 
