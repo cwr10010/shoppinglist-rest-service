@@ -12,8 +12,8 @@ ADD /build/libs $APP_HOME
 
 WORKDIR $APP_HOME
 
+USER $APP_USER
 RUN mkdir $APP_HOME/logs
 RUN chown $APP_USER:$APP_USER $APP_HOME/logs
 
-USER $APP_USER
 CMD java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
