@@ -11,5 +11,9 @@ RUN useradd --create-home -d $APP_HOME -s /bin/nologin -c "Docker image user" $A
 ADD /build/libs $APP_HOME
 
 WORKDIR $APP_HOME
+
+RUN mkdir $APP_HOME/logs
+RUN chown $APP_USER:$APP_USER $APP_HOME/logs
+
 USER $APP_USER
 CMD java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
