@@ -14,7 +14,7 @@ ADD /build/libs $APP_HOME
 WORKDIR $APP_HOME
 
 USER $APP_USER
-RUN mkdir $APP_LOGS
+RUN rmdir $APP_LOGS && mkdir $APP_LOGS
 RUN chmod -rf 777 $APP_LOGS
 RUN chown -R $APP_USER:$APP_USER $APP_LOGS
 
