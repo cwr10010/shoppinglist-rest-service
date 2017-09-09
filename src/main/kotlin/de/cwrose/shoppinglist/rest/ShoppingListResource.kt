@@ -4,7 +4,14 @@ import de.cwrose.shoppinglist.ShoppingListItem
 import de.cwrose.shoppinglist.ShoppingListsRepository
 import de.cwrose.shoppinglist.UserRepository
 import mu.KLogging
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/users/{user_id}/shopping-list")
@@ -12,60 +19,59 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val users
 
     @GetMapping
     fun index(@PathVariable("user_id") user_id: String, @RequestParam("term", required = false) term: String?) =
-        users.findOne(user_id).shoppingList.let {
-            logger.info("Find all shopping list items for user $user_id")
-            when (term) {
-                null -> it
-                else -> it.filter {
-                    logger.info("Filter shopping list for user $user_id with term $term")
-                    it.name!!.contains(term, true)
+            users.findOne(user_id).shoppingList.let {
+                logger.info("Find all shopping list items for user $user_id")
+                when (term) {
+                    null -> it
+                    else -> it.filter {
+                        logger.info("Filter shopping list for user $user_id with term $term")
+                        it.name!!.contains(term, true)
+                    }
                 }
-            }
-        } .sortedBy { it.order }
+            }.sortedBy { it.order }
 
     @PostMapping
     fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListItem>) =
-        users.findOne(user_id).apply {
-            list.forEach {
-                it.userId = user_id
-            }
-            shoppingList += list
-        } .let {
-            shoppingLists.save(list)
-            logger.info("Added List of ShoppingListItems ${list.map { it.id }} to User $user_id")
-            users.save(it)
-        } .shoppingList.sortedBy { it.order }
+            users.findOne(user_id).apply {
+                list.forEach {
+                    it.userId = user_id
+                }
+                shoppingList += list
+            }.let {
+                shoppingLists.save(list)
+                logger.info("Added List of ShoppingListItems ${list.map { it.id }} to User $user_id")
+                users.save(it)
+            }.shoppingList.sortedBy { it.order }
 
     @GetMapping("/{id}")
     fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
-        shoppingListItem(user_id, id)
+            shoppingListItem(user_id, id)
 
     @PostMapping("/{id}")
     fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String, @RequestBody shoppingListItem: ShoppingListItem) =
-        shoppingListItem(user_id, id).apply {
-            name        = shoppingListItem.name
-            description = shoppingListItem.description
-            order       = shoppingListItem.order
-            read        = shoppingListItem.read
-        } .let {
-            logger.info("Updated ShoppingListItem $id for User $user_id")
-            shoppingLists.save(it)
-        }
+            shoppingListItem(user_id, id).apply {
+                name = shoppingListItem.name
+                description = shoppingListItem.description
+                order = shoppingListItem.order
+                read = shoppingListItem.read
+            }.let {
+                logger.info("Updated ShoppingListItem $id for User $user_id")
+                shoppingLists.save(it)
+            }
 
     private fun shoppingListItem(user_id: String, id: String) =
-        users.getOne(user_id).shoppingList.single { item -> item.id == id }
+            users.getOne(user_id).shoppingList.single { item -> item.id == id }
 
     @DeleteMapping("/{id}")
     fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
-        users.getOne(user_id).let {
-            user ->
-            shoppingLists.getOne(id).let {
-                logger.info("Deleting ShoppingListItem $id for User $user_id")
-                user.shoppingList -= it
-            }.let {
-                users.save(user)
-            }
-        }.shoppingList.sortedBy { it.order }
+            users.getOne(user_id).let { user ->
+                shoppingLists.getOne(id).let {
+                    logger.info("Deleting ShoppingListItem $id for User $user_id")
+                    user.shoppingList -= it
+                }.let {
+                    users.save(user)
+                }
+            }.shoppingList.sortedBy { it.order }
 
-    companion object: KLogging()
+    companion object : KLogging()
 }

@@ -10,20 +10,20 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Component
 
 @Component
-class JwtUserDetailsService(val userRepository: UserRepository): UserDetailsService {
+class JwtUserDetailsService(val userRepository: UserRepository) : UserDetailsService {
 
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String): UserDetails = userRepository.findByUsername(username).let {
-            user -> when (user) {
-                null -> throw UsernameNotFoundException("User not found")
-                else -> createUserDetails(user)
-            }
+    override fun loadUserByUsername(username: String): UserDetails = userRepository.findByUsername(username).let { user ->
+        when (user) {
+            null -> throw UsernameNotFoundException("User not found")
+            else -> createUserDetails(user)
         }
+    }
 }
 
 internal fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.passwordHash!!)
 
-class JwtUser(@JsonIgnore val id: String, private val username: String, private val password: String): UserDetails {
+class JwtUser(@JsonIgnore val id: String, private val username: String, private val password: String) : UserDetails {
 
     override fun getUsername(): String = username
 

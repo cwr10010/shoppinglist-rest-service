@@ -56,8 +56,8 @@ class UserResourceCRUDTest : TestBase() {
             "username" To "Mini"
             "password" To "p4ssw0rd2"
             "shopping_list" To emptyList<Json>()
-        }.let {
-            user -> updateUser(location, user.toString(), token).let {
+        }.let { user ->
+            updateUser(location, user.toString(), token).let {
                 assertEquals(HttpStatus.OK, it.statusCode)
                 assertEquals("Mini", it.body.username)
             }

@@ -6,7 +6,11 @@ import org.junit.After
 import org.junit.Before
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.*
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -48,10 +52,9 @@ open class TestBase {
     @After
     open fun destroy() {
         transactionTemplate.execute {
-            userRepository.findByUsername(ADMIN.json["username"] as String).let {
-                user ->
-                refreshTokenRepository.findAllByUser(user!!).let {
-                    tokens -> refreshTokenRepository.delete(tokens)
+            userRepository.findByUsername(ADMIN.json["username"] as String).let { user ->
+                refreshTokenRepository.findAllByUser(user!!).let { tokens ->
+                    refreshTokenRepository.delete(tokens)
                 }
                 userRepository.delete(user)
             }
@@ -143,13 +146,13 @@ open class TestBase {
         }
     }
 
-    fun getShoppingList(location: URI?, token: String?) :ResponseEntity<String> {
+    fun getShoppingList(location: URI?, token: String?): ResponseEntity<String> {
         return HttpEntity<String>(standardHeaders(token)).let {
             restTemplate.exchange(location?.toASCIIString() + "/shopping-list", HttpMethod.GET, it, String::class.java)
         }
     }
 
-    fun searchShoppingList(location: URI?, term: String, token: String?) :ResponseEntity<String> {
+    fun searchShoppingList(location: URI?, term: String, token: String?): ResponseEntity<String> {
         return HttpEntity<String>(standardHeaders(token)).let {
             restTemplate.exchange(location?.toASCIIString() + "/shopping-list?term=$term", HttpMethod.GET, it, String::class.java)
         }

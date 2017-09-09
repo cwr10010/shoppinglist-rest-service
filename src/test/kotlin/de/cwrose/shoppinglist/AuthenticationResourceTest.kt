@@ -12,12 +12,12 @@ import org.springframework.util.StringUtils
 import java.net.HttpCookie
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.util.*
+import java.util.Date
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
-class AuthenticationResourceTest: TestBase() {
+class AuthenticationResourceTest : TestBase() {
 
     @Test
     fun testAuthenticateOk() {
@@ -31,9 +31,9 @@ class AuthenticationResourceTest: TestBase() {
         authenticate().let {
             assertEquals(HttpStatus.OK, it.statusCode)
 
-            extractRefreshTokenFromCookie(it).let {
-                refreshCookieToken -> refresh(refreshCookieToken).let {
-                    refresh -> validAuthResponse(refresh)
+            extractRefreshTokenFromCookie(it).let { refreshCookieToken ->
+                refresh(refreshCookieToken).let { refresh ->
+                    validAuthResponse(refresh)
                 }
             }
         }
@@ -59,8 +59,7 @@ class AuthenticationResourceTest: TestBase() {
 
     private fun validAuthResponse(response: ResponseEntity<String>) {
         assertEquals(HttpStatus.OK, response.statusCode)
-        extractToken(response.body).let {
-            token ->
+        extractToken(response.body).let { token ->
             assert(!StringUtils.isEmpty(token.auth_token))
             assert(!StringUtils.isEmpty(token.id_token))
         }
@@ -110,9 +109,8 @@ class AuthenticationResourceTest: TestBase() {
                 JwtUser("id", ADMIN.json["username"] as String, "password"),
                 Date(LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli())).let {
 
-            HttpCookie("RefreshCookie", it).let {
-                cookie -> refresh(cookie.toString()).let {
-                    refreshResult ->
+            HttpCookie("RefreshCookie", it).let { cookie ->
+                refresh(cookie.toString()).let { refreshResult ->
                     assertEquals(HttpStatus.FORBIDDEN, refreshResult.statusCode)
                 }
             }

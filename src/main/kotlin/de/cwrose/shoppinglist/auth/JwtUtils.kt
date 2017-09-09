@@ -7,8 +7,8 @@ import java.util.Date
 
 private val SECRET = Base64.encode("ABC".toByteArray())
 private val EXPIRATION = 1000L
-val TOKEN_EXPIRATION = 60*60*24
-val REFRESH_EXPIRATION = 31*24*60*60
+val TOKEN_EXPIRATION = 60 * 60 * 24
+val REFRESH_EXPIRATION = 31 * 24 * 60 * 60
 
 internal fun generateAuthToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
         .setSubject(user.username)

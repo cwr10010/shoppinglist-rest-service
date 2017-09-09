@@ -49,12 +49,13 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // Required for Kotlin integration
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile 'com.fasterxml.jackson.module:jackson-module-kotlin'
-    compile 'io.github.microutils:kotlin-logging:1.4.6'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
     compile 'org.springframework.boot:spring-boot-starter-security'
+
+    compile 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    compile 'io.github.microutils:kotlin-logging:1.4.6'
 
     compile 'org.flywaydb:flyway-core'
     compile 'mysql:mysql-connector-java'
@@ -63,8 +64,9 @@ dependencies {
     compile 'io.jsonwebtoken:jjwt:0.7.0'
     compile 'joda-time:joda-time:2.9.9'
 
-    testCompile('org.springframework.boot:spring-boot-starter-test')
-    testCompile('org.jetbrains.kotlin:kotlin-test-junit')
+    testCompile "org.springframework.boot:spring-boot-starter-test"
     testCompile 'com.h2database:h2'
-    testCompile('com.github.salomonbrys.kotson:kotson:2.5.0')
+
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testCompile "com.github.salomonbrys.kotson:kotson:2.5.0"
 }

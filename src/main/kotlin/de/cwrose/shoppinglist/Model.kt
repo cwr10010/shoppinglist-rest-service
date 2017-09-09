@@ -5,10 +5,24 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.hibernate.annotations.Type
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
-import java.util.*
-import javax.persistence.*
+import java.util.Date
+import java.util.UUID
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.FetchType
+import javax.persistence.Id
+import javax.persistence.JoinColumn
+import javax.persistence.ManyToOne
+import javax.persistence.MappedSuperclass
+import javax.persistence.OneToMany
+import javax.persistence.PrePersist
+import javax.persistence.PreUpdate
+import javax.persistence.Table
+import javax.persistence.Temporal
+import javax.persistence.TemporalType
 
-@Entity @Table(name = "SHOPPING_LIST")
+@Entity
+@Table(name = "SHOPPING_LIST")
 data class ShoppingListItem(
 
         var name: String? = null,
@@ -19,16 +33,17 @@ data class ShoppingListItem(
         var order: Int? = null,
 
         @Column(name = "item_read")
-        @Type(type="yes_no")
+        @Type(type = "yes_no")
         var read: Boolean = false,
 
         @JsonProperty("user_id")
         @Column(name = "user_id")
         var userId: String? = null
-): EntityBase()
+) : EntityBase()
 
-@Entity @Table(name = "USER")
-data class User (
+@Entity
+@Table(name = "USER")
+data class User(
 
         var username: String? = null,
 
@@ -41,26 +56,27 @@ data class User (
 
         @JsonProperty("shopping_list")
         @OneToMany(fetch = FetchType.EAGER)
-        @JoinColumn(name="user_id")
+        @JoinColumn(name = "user_id")
         var shoppingList: Set<ShoppingListItem> = emptySet()
-): EntityBase()
+) : EntityBase()
 
-@Entity @Table(name = "REFRESH_TOKEN")
-data class RefreshToken (
+@Entity
+@Table(name = "REFRESH_TOKEN")
+data class RefreshToken(
 
         @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn(name="user_id")
+        @JoinColumn(name = "user_id")
         var user: User? = null,
 
         @Temporal(TemporalType.TIMESTAMP)
         var expires: Date? = null,
 
-        @Type(type="yes_no")
+        @Type(type = "yes_no")
         var valid: Boolean? = true
-): EntityBase()
+) : EntityBase()
 
 @MappedSuperclass
-abstract class EntityBase (
+abstract class EntityBase(
 
         @JsonProperty("id")
         @Id
@@ -85,16 +101,16 @@ abstract class EntityBase (
 }
 
 @Repository
-interface ShoppingListsRepository: JpaRepository<ShoppingListItem, String>
+interface ShoppingListsRepository : JpaRepository<ShoppingListItem, String>
 
 @Repository
-interface UserRepository: JpaRepository<User, String> {
+interface UserRepository : JpaRepository<User, String> {
 
     fun findByUsername(username: String): User?
 }
 
 @Repository
-interface RefreshTokenRepository: JpaRepository<RefreshToken, String> {
+interface RefreshTokenRepository : JpaRepository<RefreshToken, String> {
 
-    fun findAllByUser(user:User): List<RefreshToken>
+    fun findAllByUser(user: User): List<RefreshToken>
 }
