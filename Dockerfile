@@ -7,7 +7,7 @@ ENV APP_LOGS=$APP_HOME/logs
 ENV TZ=Europe/Berlin
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN useradd --create-home -d $APP_HOME -s /bin/nologin -c "Docker image user" $APP_USER
+RUN useradd -u 7777 --create-home -d $APP_HOME -s /bin/nologin -c "Docker image user" $APP_USER
 
 ADD /build/libs $APP_HOME
 
