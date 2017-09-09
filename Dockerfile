@@ -20,4 +20,4 @@ RUN chown -R $APP_USER:$APP_USER $APP_LOGS
 
 VOLUME $APP_LOGS
 
-CMD chown -R $APP_USER:$APP_USER $APP_LOGS && chmod -R 777 $APP_LOGS && java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
+CMD java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
