@@ -8,16 +8,16 @@ ENV TZ=Europe/Berlin
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN useradd -u 7777 --create-home -d $APP_HOME -s /bin/nologin -c "Docker image user" $APP_USER
+RUN apt-get update && apt-get -y install sudo
 
 ADD /build/libs $APP_HOME
 
 WORKDIR $APP_HOME
 
-USER $APP_USER
 RUN mkdir $APP_LOGS
-RUN chmod -R 777 $APP_LOGS
+RUN chmod -R 770 $APP_LOGS
 RUN chown -R $APP_USER:$APP_USER $APP_LOGS
 
 VOLUME $APP_LOGS
 
-CMD java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
+CMD sudo -u $APP_USER java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
