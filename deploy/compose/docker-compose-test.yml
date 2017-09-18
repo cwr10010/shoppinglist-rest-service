@@ -9,12 +9,13 @@ services:
       - srs_test_net
     env_file: ../../shoppinglist-config/mysql/test.env
     ports:
-      - "127.0.0.1:3309:3306"
+      - "127.0.0.1:3308:3306"
   srs_test:
     networks:
       - srs_test_net
     image: cwr10010docker/shoppinglist-rest-service
-    env_file: ../../shoppinglist-config/mysql/test.env
+    environment:
+      SPRING_PROFILES_ACTIVE: test
     volumes:
       - "../../shoppinglist-config/spring/config:/app/config"
       - "../logs:/app/logs"
@@ -23,4 +24,4 @@ services:
     links:
       - db_test:mysql
     ports:
-      - "127.0.0.1:8089:8080"
+      - "127.0.0.1:8088:8080"

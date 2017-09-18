@@ -38,7 +38,7 @@ jobs:
       deploy:
         provider: script
         skip_cleanup: true
-        script: sh $TRAVIS_BUILD_DIR/deploy/do_deploy.sh
+        script: sh $TRAVIS_BUILD_DIR/deploy/do_deploy.sh test
         on:
           branch: master
       after_deploy:
