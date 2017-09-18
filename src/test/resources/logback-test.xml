@@ -5,11 +5,13 @@
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
             <charset>UTF-8</charset>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%7.7thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <logger name="de.cwrose" level="INFO"/>
+
+    <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>
 

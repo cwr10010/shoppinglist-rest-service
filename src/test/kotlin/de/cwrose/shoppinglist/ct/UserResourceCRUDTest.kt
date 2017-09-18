@@ -1,5 +1,6 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.ct
 
+import de.cwrose.shoppinglist.Application
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

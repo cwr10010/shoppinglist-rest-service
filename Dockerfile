@@ -20,4 +20,4 @@ RUN chown -R $APP_USER:$APP_USER $APP_LOGS
 
 VOLUME $APP_LOGS
 
-CMD sudo -u $APP_USER java -Dspring.datasource.username=${MYSQL_USER} -Dspring.datasource.password=${MYSQL_PASSWORD} -Dspring.datasource.url=${MYSQL_URL} -jar $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar
+CMD sudo -u $APP_USER java -jar -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE $APP_HOME/shoppinglist-rest-service-1.0-SNAPSHOT.jar

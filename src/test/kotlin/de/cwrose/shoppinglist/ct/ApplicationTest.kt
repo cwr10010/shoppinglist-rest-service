@@ -1,5 +1,7 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.ct
 
+import de.cwrose.shoppinglist.Application
+import de.cwrose.shoppinglist.main
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
@@ -12,7 +14,7 @@ class ApplicationTest {
     @Test
     fun test() {
         main(
-            arrayOf("--spring.main.web-environment=false")
+                arrayOf("--spring.main.web-environment=false")
         )
     }
 }

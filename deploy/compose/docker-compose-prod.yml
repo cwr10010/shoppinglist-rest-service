@@ -1,0 +1,28 @@
+version: '2'
+networks:
+  srs_prod_net:
+    driver: bridge
+services:
+  db_prod:
+    image: mariadb
+    networks:
+      - srs_prod_net
+    env_file:
+      - ../../shoppinglist-config/mysql/prod.env
+    ports:
+      - "127.0.0.1:3307:3306"
+  srs_prod:
+    networks:
+      - srs_prod_net
+    image: cwr10010docker/shoppinglist-rest-service
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    volumes:
+      - "../../shoppinglist-config/spring/config:/app/config"
+      - "../logs:/app/logs"
+    depends_on:
+      - db_prod
+    links:
+      - db_prod:mysql
+    ports:
+      - "127.0.0.1:8087:8080"

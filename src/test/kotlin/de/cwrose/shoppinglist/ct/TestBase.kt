@@ -1,6 +1,9 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.ct
 
 import com.google.gson.Gson
+import de.cwrose.shoppinglist.RefreshTokenRepository
+import de.cwrose.shoppinglist.User
+import de.cwrose.shoppinglist.UserRepository
 import net.minidev.json.JSONObject
 import org.junit.After
 import org.junit.Before

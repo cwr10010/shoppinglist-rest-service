@@ -1,7 +1,8 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.ct
 
 import com.github.salomonbrys.kotson.typeToken
 import com.google.gson.Gson
+import de.cwrose.shoppinglist.Application
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

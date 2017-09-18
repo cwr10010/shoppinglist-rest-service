@@ -1,5 +1,6 @@
-package de.cwrose.shoppinglist
+package de.cwrose.shoppinglist.ct
 
+import de.cwrose.shoppinglist.Application
 import de.cwrose.shoppinglist.auth.JwtUser
 import de.cwrose.shoppinglist.auth.generateAuthToken
 import org.junit.Test
