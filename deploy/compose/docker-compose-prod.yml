@@ -15,8 +15,7 @@ services:
     networks:
       - srs_prod_net
     image: cwr10010docker/shoppinglist-rest-service
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
+    env_file: ../../shoppinglist-config/mysql/prod.env
     volumes:
       - "../../shoppinglist-config/spring/config:/app/config"
       - "../logs:/app/logs"

@@ -14,8 +14,7 @@ services:
     networks:
       - srs_test_net
     image: cwr10010docker/shoppinglist-rest-service
-    environment:
-      SPRING_PROFILES_ACTIVE: test
+    env_file: ../../shoppinglist-config/mysql/test.env
     volumes:
       - "../../shoppinglist-config/spring/config:/app/config"
       - "../logs:/app/logs"
