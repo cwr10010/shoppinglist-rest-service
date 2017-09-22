@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 @RestController
 @RequestMapping("/users/{user_id}/shopping-list")
 class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shoppingListItems: ShoppingListItemsRepository) {
@@ -41,10 +41,11 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
             shoppingLists.findAll().filter {
                 it.accessableForUserIds.any { it.id == user_id }
             }.let {
-                list.forEach { item ->
-                    item.userId = user_id
-                }
                 it.single().let { shoppingList ->
+                    list.forEach { item ->
+                        item.userId = user_id
+                        item.shoppingListId = shoppingList.id
+                    }
                     shoppingList.shoppingListItems += list
                     shoppingListItems.save(list)
                     logger.info("Added List of ShoppingListItems ${list.map { shoppingList.id }} to User $user_id")

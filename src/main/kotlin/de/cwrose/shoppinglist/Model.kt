@@ -42,7 +42,11 @@ data class ShoppingListItem(
 
         @JsonProperty("user_id")
         @Column(name = "user_id")
-        var userId: String? = null
+        var userId: String? = null,
+
+        @JsonProperty("shopping_list_id")
+        @Column(name = "shopping_list_id")
+        var shoppingListId: String? = null
 ) : EntityBase()
 
 @Entity
