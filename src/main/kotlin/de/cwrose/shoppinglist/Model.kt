@@ -9,9 +9,13 @@ import java.util.Date
 import java.util.UUID
 import javax.persistence.Column
 import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
 import javax.persistence.FetchType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
+import javax.persistence.JoinTable
+import javax.persistence.ManyToMany
 import javax.persistence.ManyToOne
 import javax.persistence.MappedSuperclass
 import javax.persistence.OneToMany
@@ -22,7 +26,7 @@ import javax.persistence.Temporal
 import javax.persistence.TemporalType
 
 @Entity
-@Table(name = "SHOPPING_LIST")
+@Table(name = "SHOPPING_LIST_ITEM")
 data class ShoppingListItem(
 
         var name: String? = null,
@@ -32,13 +36,51 @@ data class ShoppingListItem(
         @Column(name = "item_order")
         var order: Int? = null,
 
-        @Column(name = "item_read")
+        @Column(name = "item_checked")
         @Type(type = "yes_no")
-        var read: Boolean = false,
+        var checked: Boolean = false,
 
         @JsonProperty("user_id")
         @Column(name = "user_id")
         var userId: String? = null
+) : EntityBase()
+
+@Entity
+@Table(name = "SHOPPING_LIST")
+data class ShoppingList(
+
+        var name: String? = null,
+
+        @JsonProperty("owners_user_id")
+        @Column(name = "owners_user_id")
+        var ownersUserId: String? = null,
+
+        @JsonProperty("accessable_for")
+        @OneToMany(fetch = FetchType.LAZY)
+        @JoinTable(
+                name = "ACCESSABLE_FOR_USER_IDS",
+                joinColumns = arrayOf(JoinColumn(name = "SHOPPINGLIST_ID", referencedColumnName = "ID")),
+                inverseJoinColumns = arrayOf(JoinColumn(name = "USER_ID", referencedColumnName = "ID")))
+        var accessableForUserIds: Set<User> = emptySet(),
+
+        @JsonProperty("shopping_list_items")
+        @OneToMany(fetch = FetchType.EAGER)
+        @JoinColumn(name = "shopping_list_id")
+        var shoppingListItems: Set<ShoppingListItem> = emptySet()
+) : EntityBase()
+
+enum class AuthorityName {
+    ROLE_USER, ROLE_ADMIN
+}
+
+@Entity
+@Table(name = "AUTHORITY")
+data class Authority(
+
+        @Column(name = "NAME", length = 50)
+        @Enumerated(EnumType.STRING)
+        var name: AuthorityName? = null
+
 ) : EntityBase()
 
 @Entity
@@ -54,10 +96,41 @@ data class User(
         @Column(name = "password")
         var passwordHash: String? = null,
 
-        @JsonProperty("shopping_list")
-        @OneToMany(fetch = FetchType.EAGER)
-        @JoinColumn(name = "user_id")
-        var shoppingList: Set<ShoppingListItem> = emptySet()
+        @JsonProperty("email_address")
+        var emailAddress: String? = null,
+
+        @Type(type = "yes_no")
+        var active: Boolean = true,
+
+        @ManyToMany(fetch = FetchType.EAGER)
+        @JoinTable(
+                name = "USER_AUTHORITY",
+                joinColumns = arrayOf(JoinColumn(name = "USER_ID", referencedColumnName = "ID")),
+                inverseJoinColumns = arrayOf(JoinColumn(name = "AUTHORITY_ID", referencedColumnName = "ID")))
+        var authorities: Set<Authority> = emptySet()
+
+) : EntityBase()
+
+@Entity
+@Table(name = "REGISTRATION_DATA")
+data class RegistrationData(
+
+        var username: String? = null,
+
+        @Transient
+        var password: String? = null,
+
+        @JsonIgnore
+        @Column(name = "password")
+        var passwordHash: String? = null,
+
+        @JsonProperty("email_address")
+        var emailAddress: String? = null,
+
+        @JsonIgnore
+        @Column(name = "token")
+        var registrationToken: String? = null
+
 ) : EntityBase()
 
 @Entity
@@ -101,7 +174,13 @@ abstract class EntityBase(
 }
 
 @Repository
-interface ShoppingListsRepository : JpaRepository<ShoppingListItem, String>
+interface ShoppingListItemsRepository : JpaRepository<ShoppingListItem, String>
+
+@Repository
+interface ShoppingListsRepository : JpaRepository<ShoppingList, String> {
+
+    fun findByOwnersUserId(ownersUserId: String): ShoppingList
+}
 
 @Repository
 interface UserRepository : JpaRepository<User, String> {
@@ -113,4 +192,16 @@ interface UserRepository : JpaRepository<User, String> {
 interface RefreshTokenRepository : JpaRepository<RefreshToken, String> {
 
     fun findAllByUser(user: User): List<RefreshToken>
+}
+
+@Repository
+interface RegistrationDataRepository : JpaRepository<RegistrationData, String> {
+
+    fun findByUsername(username: String) : RegistrationData?
+}
+
+@Repository
+interface AuthorityRepository : JpaRepository<Authority, String> {
+
+    fun findByName(name: AuthorityName): Authority?
 }

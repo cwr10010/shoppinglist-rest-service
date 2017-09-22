@@ -107,7 +107,7 @@ class AuthenticationResourceTest : TestBase() {
     @Test
     fun testRefreshTokenExpiredForbidden() {
         generateAuthToken(
-                JwtUser("id", ADMIN.json["username"] as String, "password"),
+                JwtUser("id", ADMIN.json["username"] as String, "password", true, emptyList()),
                 Date(LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli())).let {
 
             HttpCookie("RefreshCookie", it).let { cookie ->

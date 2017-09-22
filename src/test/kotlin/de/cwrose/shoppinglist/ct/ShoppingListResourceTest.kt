@@ -43,8 +43,13 @@ class ShoppingListResourceTest : TestBase() {
 
     @After
     override fun destroy() {
-        deleteUser(location, token)
-        super.destroy()
+        authenticate().let {
+            extractToken(it.body).let {
+                deleteUser(location, it.auth_token).let {
+                    super.destroy()
+                }
+            }
+        }
     }
 
     @Test
@@ -62,7 +67,7 @@ class ShoppingListResourceTest : TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
-                    assertEquals(false, it[0].read)
+                    assertEquals(false, it[0].checked)
                     assertEquals(extractId(location), it[0].user_id)
                 }
             }
@@ -72,7 +77,7 @@ class ShoppingListResourceTest : TestBase() {
             "name" To "Milk"
             "description" To "Sweet Milk"
             "order" To 1
-            "read" To true
+            "checked" To true
         }.let { entry2 ->
             addShoppingListEntry(location, "[$entry2]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
@@ -82,13 +87,13 @@ class ShoppingListResourceTest : TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
-                    assertEquals(false, it[0].read)
+                    assertEquals(false, it[0].checked)
 
                     assertEquals(extractId(location), it[0].user_id)
                     assertEquals("Milk", it[1].name)
                     assertEquals("Sweet Milk", it[1].description)
                     assertEquals(1, it[1].order)
-                    assertEquals(true, it[1].read)
+                    assertEquals(true, it[1].checked)
                     assertEquals(extractId(location), it[1].user_id)
                 }
             }
@@ -107,7 +112,7 @@ class ShoppingListResourceTest : TestBase() {
             "name" To "Milk"
             "description" To "Sweet Milk"
             "order" To 1
-            "read" To true
+            "checked" To true
         }
 
         addShoppingListEntry(location, "[$first, $second]", token).let { sle: ResponseEntity<String> ->
@@ -123,7 +128,7 @@ class ShoppingListResourceTest : TestBase() {
                 assertEquals("Milk", it[0].name)
                 assertEquals("Sweet Milk", it[0].description)
                 assertEquals(1, it[0].order)
-                assertEquals(true, it[0].read)
+                assertEquals(true, it[0].checked)
             }
         }
 
@@ -143,7 +148,7 @@ class ShoppingListResourceTest : TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
-            "read" To true
+            "checked" To true
         }.let { entry1 ->
             addShoppingListEntry(location, "[$entry1]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
@@ -153,7 +158,7 @@ class ShoppingListResourceTest : TestBase() {
                     assertEquals("Cheese", it[0].name)
                     assertEquals("Tasty Cheese", it[0].description)
                     assertEquals(0, it[0].order)
-                    assertEquals(true, it[0].read)
+                    assertEquals(true, it[0].checked)
                     assertEquals(extractId(location), it[0].user_id)
                 }
             }
@@ -167,7 +172,7 @@ class ShoppingListResourceTest : TestBase() {
                 assertEquals("Cheese", it[0].name)
                 assertEquals("Tasty Cheese", it[0].description)
                 assertEquals(0, it[0].order)
-                assertEquals(true, it[0].read)
+                assertEquals(true, it[0].checked)
                 assertEquals(extractId(location), it[0].user_id)
             }
         }
@@ -179,7 +184,7 @@ class ShoppingListResourceTest : TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
-            "read" To true
+            "checked" To true
         }.let { entry1 ->
             addShoppingListEntry(location, "[$entry1]", token).let { addResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, addResponse.statusCode)
@@ -190,7 +195,7 @@ class ShoppingListResourceTest : TestBase() {
                         assertEquals("Cheese", getResponse.body.name)
                         assertEquals("Tasty Cheese", getResponse.body.description)
                         assertEquals(0, getResponse.body.order)
-                        assertEquals(true, getResponse.body.read)
+                        assertEquals(true, getResponse.body.checked)
                         assertEquals(extractId(location), getResponse.body.user_id)
                     }
 
@@ -205,7 +210,7 @@ class ShoppingListResourceTest : TestBase() {
             "name" To "Cheese"
             "description" To "Tasty Cheese"
             "order" To 0
-            "read" To false
+            "checked" To false
         }.let { entry1 ->
             addShoppingListEntry(location, "[$entry1]", token).let { sleResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sleResponse.statusCode)
@@ -216,7 +221,7 @@ class ShoppingListResourceTest : TestBase() {
                         "name" To "Milk"
                         "description" To "Sweet Milk"
                         "order" To 1
-                        "read" To true
+                        "checked" To true
                     }.let { entry2 ->
                         updateShoppingListEntry(location, it[0].id!!, entry2.toString(), token).let { sle: ResponseEntity<ShoppingListEntryVO> ->
                             assertEquals(HttpStatus.OK, sle.statusCode)
@@ -224,7 +229,7 @@ class ShoppingListResourceTest : TestBase() {
                             assertEquals("Milk", sle.body.name)
                             assertEquals("Sweet Milk", sle.body.description)
                             assertEquals(1, sle.body.order)
-                            assertEquals(true, sle.body.read)
+                            assertEquals(true, sle.body.checked)
                             assertEquals(extractId(location), sle.body.user_id)
 
                         }

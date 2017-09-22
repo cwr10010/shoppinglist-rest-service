@@ -129,7 +129,7 @@ class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEnt
                 it.csrf().disable()
                         .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
                         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                        .authorizeRequests().antMatchers("/auth").permitAll()
+                        .authorizeRequests().antMatchers("/auth", "/register").permitAll()
                         .anyRequest().authenticated()
                 it.addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter::class.java)
                 it.headers().cacheControl()

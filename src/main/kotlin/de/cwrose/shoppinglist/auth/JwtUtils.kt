@@ -33,6 +33,14 @@ internal fun generateIDToken(user: JwtUser, issueDate: Date = Date()) = Jwts.bui
         .signWith(SignatureAlgorithm.HS512, SECRET)
         .compact()
 
+internal fun generateRegistrationToken(username: String, issueDate: Date = Date()) = Jwts.builder()
+        .setClaims(hashMapOf("username" to username as Any))
+        .setSubject("RegistrationToken")
+        .setIssuedAt(issueDate)
+        .setExpiration(Date(issueDate.time + TOKEN_EXPIRATION * 1000L))
+        .signWith(SignatureAlgorithm.HS512, SECRET)
+        .compact()
+
 internal fun updateRefreshToken(token: String, issueDate: Date = Date()) =
         getAllClaimsFromToken(token).apply {
             issuedAt = issueDate
@@ -46,6 +54,8 @@ internal fun validateToken(token: String, userDetails: UserDetails) =
 internal fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
 
 internal fun getRefreshTokenId(refreshToken: String) = getAllClaimsFromToken(refreshToken)["refresh_id"] as String
+
+internal fun getRegistrationTokenUser(registrationToken: String) = getAllClaimsFromToken(registrationToken)["username"] as String
 
 private fun getAllClaimsFromToken(token: String) = Jwts.parser()
         .setSigningKey(SECRET)

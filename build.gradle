@@ -4,7 +4,7 @@ version '1.0-SNAPSHOT'
 buildscript {
     ext {
         kotlin_version = '1.1.4-3'
-        spring_boot_version = '1.5.6.RELEASE'
+        spring_boot_version = '1.5.7.RELEASE'
         json_version = '20170516'
     }
 
@@ -54,6 +54,9 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
     compile 'org.springframework.boot:spring-boot-starter-security'
 
+    compile 'org.springframework.boot:spring-boot-starter-mail'
+    compile 'org.springframework.boot:spring-boot-starter-freemarker'
+
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin'
     compile 'io.github.microutils:kotlin-logging:1.4.6'
 
@@ -69,4 +72,8 @@ dependencies {
 
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testCompile "com.github.salomonbrys.kotson:kotson:2.5.0"
+
+    testCompile 'org.subethamail:subethasmtp:3.1.7'
+
+
 }

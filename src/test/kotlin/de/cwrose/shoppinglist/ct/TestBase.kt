@@ -1,7 +1,13 @@
 package de.cwrose.shoppinglist.ct
 
 import com.google.gson.Gson
+import de.cwrose.shoppinglist.Authority
+import de.cwrose.shoppinglist.AuthorityName
+import de.cwrose.shoppinglist.AuthorityRepository
 import de.cwrose.shoppinglist.RefreshTokenRepository
+import de.cwrose.shoppinglist.RegistrationDataRepository
+import de.cwrose.shoppinglist.ShoppingListItemsRepository
+import de.cwrose.shoppinglist.ShoppingListsRepository
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
 import net.minidev.json.JSONObject
@@ -19,11 +25,24 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
 import javax.annotation.PostConstruct
+import kotlin.coroutines.experimental.EmptyCoroutineContext.plus
 
 open class TestBase {
 
     @Autowired
+    lateinit var registrationDataRepository: RegistrationDataRepository
+
+    @Autowired
+    lateinit var authorityRepository: AuthorityRepository
+
+    @Autowired
     lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var shoppingListItemsRepository: ShoppingListItemsRepository
+
+    @Autowired
+    lateinit var shoppingListRepository: ShoppingListsRepository
 
     @Autowired
     lateinit var refreshTokenRepository: RefreshTokenRepository
@@ -47,9 +66,37 @@ open class TestBase {
 
     @Before
     open fun setup() {
+        cleanupDb()
         transactionTemplate.execute {
-            userRepository.save(User(username = ADMIN.json["username"] as String, passwordHash = passwordEncoder.encode(ADMIN.json["password"] as String)))
+            authorityRepository.findByName(AuthorityName.ROLE_USER).let {
+                when (it) {
+                    null -> authorityRepository.save(Authority(AuthorityName.ROLE_USER))
+                    else -> it
+                }
+            }
+            authorityRepository.findByName(AuthorityName.ROLE_ADMIN).let {
+                when (it) {
+                    null -> authorityRepository.save(Authority(AuthorityName.ROLE_ADMIN))
+                    else -> it
+                }.let { authority ->
+                    userRepository.save(User(
+                            username = ADMIN.json["username"] as String,
+                            passwordHash = passwordEncoder.encode(ADMIN.json["password"] as String),
+                            active = true,
+                            emailAddress = "foo@example.com",
+                            authorities = setOf(authority)))
+                }
+            }
         }
+    }
+
+    fun cleanupDb() {
+        shoppingListItemsRepository.deleteAll()
+        shoppingListRepository.deleteAll()
+        refreshTokenRepository.deleteAll()
+        userRepository.deleteAll()
+        authorityRepository.deleteAll()
+        registrationDataRepository.deleteAll()
     }
 
     @After
@@ -59,7 +106,15 @@ open class TestBase {
                 refreshTokenRepository.findAllByUser(user!!).let { tokens ->
                     refreshTokenRepository.delete(tokens)
                 }
-                userRepository.delete(user)
+                userRepository.delete(user).let {
+                    authorityRepository.findByName(AuthorityName.ROLE_ADMIN).let {
+                        authorityRepository.delete(it)
+                    }
+                    authorityRepository.findByName(AuthorityName.ROLE_USER).let {
+                        authorityRepository.delete(it)
+                    }
+
+                }
             }
         }
     }
@@ -96,7 +151,7 @@ open class TestBase {
             val id_token: String,
             val expires: Int)
 
-    private fun standardHeaders(token: String?): HttpHeaders {
+    fun standardHeaders(token: String?): HttpHeaders {
         return HttpHeaders().apply {
             contentType = MediaType.APPLICATION_JSON
             add("Authorization", "Bearer $token")
@@ -189,6 +244,7 @@ open class TestBase {
 val USER_1 = Json {
     "username" To "Max"
     "password" To "p4ssw0rd"
+    "email_address" To "test@example.com"
 }
 
 val ADMIN = Json {
@@ -211,5 +267,5 @@ class Json() {
     override fun toString(): String = json.toString()
 }
 
-data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null, var read: Boolean? = null, var user_id: String?)
-data class UserVO(var username: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())
+data class ShoppingListEntryVO(var id: String? = null, var name: String? = null, var description: String? = null, var order: Int? = null, var checked: Boolean? = null, var user_id: String?)
+data class UserVO(var id: String? = null, var username: String? = null, var password: String? = null, var shopping_list: List<ShoppingListEntryVO>? = emptyList())
