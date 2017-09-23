@@ -11,6 +11,7 @@ import mu.KLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -25,7 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder
 @RequestMapping("/users")
 class UserResource(
         val userRepository: UserRepository,
-        val authorityRepository: AuthorityRepository,
+        val userService: UserService,
         val shoppingListsRepository: ShoppingListsRepository,
         val refreshTokenRepository: RefreshTokenRepository,
         val passwordEncoder: PasswordEncoder) {
@@ -33,25 +34,8 @@ class UserResource(
     @PostMapping
     fun index(@RequestBody user: User, uriComponentsBuilder: UriComponentsBuilder): ResponseEntity<Void> =
             when (userRepository.findByUsername(user.username!!)) {
-                null -> user.apply {
-                    passwordHash = passwordEncoder.encode(user.password)
-                    authorities = when {
-                        user.authorities.isEmpty() -> setOf(defaultAuthority())
-                        else -> user.authorities
-                    }
-                    active = true
-                }.let {
-                    userRepository.save(user).let { user ->
-                        logger.info("Added user ${user.id}")
-                        shoppingListsRepository.save(ShoppingList().apply {
-                            name = "ShoppingList"
-                            ownersUserId = user.id
-                            accessableForUserIds += user
-                        }).let {
-                            logger.info("Added default shoppinglist ${it.id}")
-                        }
-                        uriComponentsBuilder.path("/users/{id}").buildAndExpand(user.id)
-                    }.let {
+                null -> userService.createUser(user).let {
+                    uriComponentsBuilder.path("/users/{id}").buildAndExpand(user.id).let {
                         ResponseEntity.created(it.toUri())
                     }
                 }
@@ -91,7 +75,44 @@ class UserResource(
                 }
             }
 
+    companion object : KLogging()
+}
+
+@Service
+class UserService(
+        val userRepository: UserRepository,
+        val authorityRepository: AuthorityRepository,
+        val shoppingListsRepository: ShoppingListsRepository,
+        val passwordEncoder: PasswordEncoder) {
+
+    fun createUser(user: User) =
+            user.apply {
+                passwordHash = when {
+                    user.password != null -> passwordEncoder.encode(user.password)
+                    else -> user.passwordHash
+                }
+                authorities = when {
+                    user.authorities.isEmpty() -> setOf(defaultAuthority())
+                    else -> user.authorities
+                }
+                active = true
+            }.let {
+                userRepository.save(user).let { user ->
+                    logger.info("Added user ${user.id}")
+                    shoppingListsRepository.save(
+                            ShoppingList().apply {
+                                name = "Shopping List"
+                                ownersUserId = user.id
+                                accessableForUserIds += user
+                            }).let {
+                        logger.info("Added default shoppinglist ${it.id}")
+                    }
+                    user
+                }
+            }!!
+
     fun defaultAuthority() = authorityRepository.findByName(AuthorityName.ROLE_USER)!!
 
     companion object : KLogging()
+
 }

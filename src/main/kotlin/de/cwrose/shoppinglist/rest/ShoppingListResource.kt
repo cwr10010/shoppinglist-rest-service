@@ -1,5 +1,6 @@
 package de.cwrose.shoppinglist.rest
 
+import de.cwrose.shoppinglist.ShoppingList
 import de.cwrose.shoppinglist.ShoppingListItem
 import de.cwrose.shoppinglist.ShoppingListItemsRepository
 import de.cwrose.shoppinglist.ShoppingListsRepository
@@ -21,9 +22,7 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
 
     @GetMapping
     fun index(@PathVariable("user_id") user_id: String, @RequestParam("term", required = false) term: String?) =
-            shoppingLists.findAll().filter {
-                it.accessableForUserIds.any { it.id == user_id }
-            }.let {
+            findShoppinglistsOfUser(user_id).let {
                 logger.info("Find all shopping list items for user $user_id")
                 when (term) {
                     null -> it.flatMap { shoppingList ->  shoppingList.shoppingListItems }
@@ -38,19 +37,18 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
 
     @PostMapping
     fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListItem>) =
-            shoppingLists.findAll().filter {
-                it.accessableForUserIds.any { it.id == user_id }
-            }.let {
+            findShoppinglistsOfUser(user_id).let {
                 it.single().let { shoppingList ->
                     logger.debug("Shoppinglist: ${shoppingList} with id ${shoppingList.id}")
-                    list.forEach { item ->
+                    list.onEach { item ->
                         item.userId = user_id
                         item.shoppingList = shoppingList
+                    } .let {
+                        logger.debug("Items to be added: ${it}")
+                        shoppingList.shoppingListItems += it
+                        logger.info("Added List of ShoppingListItems ${it.map { it.id }} to User $user_id")
+                        shoppingLists.save(shoppingList)
                     }
-                    logger.debug("Items to be added: ${list}")
-                    shoppingList.shoppingListItems += list
-                    logger.info("Added List of ShoppingListItems ${list.map { shoppingList.id }} to User $user_id")
-                    shoppingLists.save(shoppingList)
                 }.shoppingListItems.sortedBy { it.order }
             }
 
@@ -70,20 +68,9 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
                 shoppingListItems.save(it)
             }
 
-    private fun shoppingListItem(user_id: String, id: String) =
-            shoppingLists.findAll().filter {
-                it.accessableForUserIds.any { it.id == user_id }
-            } .let { shoppingList ->
-                shoppingList.single().let {
-                    it.shoppingListItems.single { it.id == id }
-                }
-            }
-
     @DeleteMapping("/{id}")
     fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
-            shoppingLists.findAll().filter {
-                it.accessableForUserIds.any { it.id == user_id }
-            } .let { usersShoppingLists ->
+            findShoppinglistsOfUser(user_id).let { usersShoppingLists ->
                 usersShoppingLists.single().let { shoppingList ->
                     shoppingListItems.getOne(id).let {
                         logger.info("Deleting ShoppingListItem $id for User $user_id")
@@ -94,6 +81,18 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
                     shoppingList
                 }
             }.shoppingListItems.sortedBy { it.order }
+
+    private fun shoppingListItem(user_id: String, id: String) =
+            findShoppinglistsOfUser(user_id).let { shoppingList ->
+                shoppingList.single().let {
+                    it.shoppingListItems.single { it.id == id }
+                }
+            }
+
+    private fun findShoppinglistsOfUser(user_id: String): List<ShoppingList> =
+        shoppingLists.findAll().filter {
+            it.accessableForUserIds.any { it.id == user_id }
+        }
 
     companion object : KLogging()
 }

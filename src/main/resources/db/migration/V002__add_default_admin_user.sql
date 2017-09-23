@@ -27,7 +27,7 @@ INSERT INTO user
     'admin',
     '$2a$10$xqXWmTFmKpOLJByx5qB3semrkBu/KrVrzM5/uYVC1vuYWdOlDSpBq',
     'test@example.com',
-    'y',
+    'Y',
     CURRENT_TIMESTAMP
 );
 

@@ -9,7 +9,6 @@ import de.cwrose.shoppinglist.auth.getRegistrationTokenUser
 import freemarker.template.Configuration
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.ResponseEntity
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -28,16 +27,31 @@ import javax.mail.internet.InternetAddress
 
 @RestController
 @RequestMapping("/register")
-class RegistrationResource(val registrationDataRepository: RegistrationDataRepository, val mailService: MailService, val passwordEncoder: PasswordEncoder, val userRepository: UserRepository) {
+class RegistrationResource(
+        val registrationDataRepository: RegistrationDataRepository,
+        val mailService: MailService,
+        val passwordEncoder: PasswordEncoder,
+        val userRepository: UserRepository,
+        val userService: UserService) {
 
     @PostMapping
     fun register(@RequestBody registrationData: RegistrationData) =
-            registrationData.apply {
-                registrationToken = generateRegistrationToken(username!!)
-                passwordHash = passwordEncoder.encode(password)
-            } .let {
-                registrationDataRepository.save(it).let {
-                    mailService.sendMail(it.username!!, it.emailAddress!!, it.registrationToken!!)
+            userRepository.findByUsername(registrationData.username!!).let {
+                when (it) {
+                    null -> registrationData.apply {
+                        registrationToken = generateRegistrationToken(username!!)
+                        passwordHash = passwordEncoder.encode(password)
+                    }.let { data ->
+                        registrationDataRepository.findByUsername(data.username!!).let { dbData: RegistrationData? ->
+                            when (dbData) {
+                                null -> registrationDataRepository.save(data).let {
+                                    mailService.sendMail(it.username!!, it.emailAddress!!, it.registrationToken!!)
+                                }
+                                else -> logger.info("Name already reserved. Don't save registration data.")
+                            }
+                        }
+                    }
+                    else -> logger.info("User already exists. Ignore registration attempt")
                 }
             }
 
@@ -46,17 +60,17 @@ class RegistrationResource(val registrationDataRepository: RegistrationDataRepos
             token.let {
                 getRegistrationTokenUser(it).let {
                     registrationDataRepository.findByUsername(it).takeIf {
-                        it?.registrationToken == token
+                        it?.registrationToken == token && userRepository.findByUsername(it.username!!) == null
                     } .let { registrationData ->
-                        userRepository.save(User().apply {
-                            username = registrationData!!.username
-                            passwordHash = registrationData.passwordHash
-                            emailAddress = registrationData.emailAddress
+                        userService.createUser(
+                                User().apply {
+                                    username = registrationData!!.username
+                                    passwordHash = registrationData.passwordHash
+                                    emailAddress = registrationData.emailAddress
                         })
                     }
                 }
             }
-
 
     companion object : KLogging()
 }
