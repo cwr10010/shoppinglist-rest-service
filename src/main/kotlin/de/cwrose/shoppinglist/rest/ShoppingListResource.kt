@@ -42,12 +42,13 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
                 it.accessableForUserIds.any { it.id == user_id }
             }.let {
                 it.single().let { shoppingList ->
+                    logger.debug("Shoppinglist: ${shoppingList} with id ${shoppingList.id}")
                     list.forEach { item ->
                         item.userId = user_id
-                        item.shoppingListId = shoppingList.id
+                        item.shoppingList = shoppingList
                     }
+                    logger.debug("Items to be added: ${list}")
                     shoppingList.shoppingListItems += list
-                    shoppingListItems.save(list)
                     logger.info("Added List of ShoppingListItems ${list.map { shoppingList.id }} to User $user_id")
                     shoppingLists.save(shoppingList)
                 }.shoppingListItems.sortedBy { it.order }
@@ -87,12 +88,12 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
                     shoppingListItems.getOne(id).let {
                         logger.info("Deleting ShoppingListItem $id for User $user_id")
                         shoppingList.shoppingListItems -= it
+                        shoppingLists.save(shoppingList)
+                        shoppingListItems.delete(it)
                     }
-                }.let {
-                    shoppingLists.save(usersShoppingLists)
+                    shoppingList
                 }
-            }.single().shoppingListItems.sortedBy { it.order }
-
+            }.shoppingListItems.sortedBy { it.order }
 
     companion object : KLogging()
 }

@@ -87,7 +87,7 @@ class MailService(val mailSender: JavaMailSender, val freemarkerConfig: Configur
             MimeMessageHelper(message).apply {
                 setFrom(InternetAddress(senderEmailAddress, senderDisplayName))
                 setTo(emailAddress)
-                setText(template(userName, registrationToken))
+                setText(template(userName, registrationToken), true)
                 setSubject(subject)
             } .let {
                 mailSender.send(message)
@@ -96,7 +96,7 @@ class MailService(val mailSender: JavaMailSender, val freemarkerConfig: Configur
 
 
     fun template(username: String, registrationToken: String): String =
-        freemarkerConfig.getTemplate("email-template.ftl").let { template ->
+        freemarkerConfig.getTemplate("mail-registration.ftl").let { template ->
             FreeMarkerTemplateUtils.processTemplateIntoString(
                     template,
                     mapOf("username" to username,

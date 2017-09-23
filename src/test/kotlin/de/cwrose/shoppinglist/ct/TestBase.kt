@@ -91,7 +91,6 @@ open class TestBase {
     }
 
     fun cleanupDb() {
-        shoppingListItemsRepository.deleteAll()
         shoppingListRepository.deleteAll()
         refreshTokenRepository.deleteAll()
         userRepository.deleteAll()

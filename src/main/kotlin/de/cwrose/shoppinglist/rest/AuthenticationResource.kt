@@ -56,7 +56,7 @@ class AuthenticationResource(
             refreshCookie.value.let { refreshToken ->
                 getRefreshTokenId(refreshToken).let {
                     refreshTokenRepository.findOne(it).let { token ->
-                        when (token.valid) {
+                        when (token?.valid) {
                             true -> authenticate(response, token.user!!.username!!, refreshToken).let {
                                 ResponseEntity.ok(it)
                             }

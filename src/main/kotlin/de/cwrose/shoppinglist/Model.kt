@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Date
 import java.util.UUID
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.EnumType
@@ -44,14 +45,14 @@ data class ShoppingListItem(
         @Column(name = "user_id")
         var userId: String? = null,
 
-        @JsonProperty("shopping_list_id")
-        @Column(name = "shopping_list_id")
-        var shoppingListId: String? = null
+        @JsonIgnore
+        @ManyToOne(optional = false)
+        var shoppingList: ShoppingList? = null
 ) : EntityBase()
 
 @Entity
 @Table(name = "SHOPPING_LIST")
-data class ShoppingList(
+class ShoppingList(
 
         var name: String? = null,
 
@@ -68,8 +69,7 @@ data class ShoppingList(
         var accessableForUserIds: Set<User> = emptySet(),
 
         @JsonProperty("shopping_list_items")
-        @OneToMany(fetch = FetchType.EAGER)
-        @JoinColumn(name = "shopping_list_id")
+        @OneToMany(fetch = FetchType.EAGER, mappedBy = "shoppingList", cascade = arrayOf(CascadeType.ALL))
         var shoppingListItems: Set<ShoppingListItem> = emptySet()
 ) : EntityBase()
 
