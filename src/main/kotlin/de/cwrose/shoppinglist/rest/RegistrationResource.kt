@@ -4,8 +4,7 @@ import de.cwrose.shoppinglist.RegistrationData
 import de.cwrose.shoppinglist.RegistrationDataRepository
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
-import de.cwrose.shoppinglist.auth.generateRegistrationToken
-import de.cwrose.shoppinglist.auth.getRegistrationTokenUser
+import de.cwrose.shoppinglist.auth.JwtService
 import freemarker.template.Configuration
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
@@ -32,25 +31,26 @@ class RegistrationResource(
         val mailService: MailService,
         val passwordEncoder: PasswordEncoder,
         val userRepository: UserRepository,
-        val userService: UserService) {
+        val userService: UserService,
+        val jwtService: JwtService) {
 
     @PostMapping
     fun register(@RequestBody registrationData: RegistrationData) =
             userRepository.findByUsername(registrationData.username!!).let {
                 when (it) {
                     null -> registrationData.apply {
-                        registrationToken = generateRegistrationToken(username!!)
-                        passwordHash = passwordEncoder.encode(password)
-                    }.let { data ->
-                        registrationDataRepository.findByUsername(data.username!!).let { dbData: RegistrationData? ->
-                            when (dbData) {
-                                null -> registrationDataRepository.save(data).let {
-                                    mailService.sendMail(it.username!!, it.emailAddress!!, it.registrationToken!!)
+                            registrationToken = jwtService.generateRegistrationToken(username!!)
+                            passwordHash = passwordEncoder.encode(password)
+                        }.let { enrichedRegistrationData ->
+                            registrationDataRepository.findByUsername(enrichedRegistrationData.username!!).let { dbData ->
+                                when (dbData) {
+                                    null -> registrationDataRepository.save(enrichedRegistrationData).let {
+                                        mailService.sendMail(it.username!!, it.emailAddress!!, it.registrationToken!!)
+                                    }
+                                    else -> logger.info("Name already reserved. Don't save registration data.")
                                 }
-                                else -> logger.info("Name already reserved. Don't save registration data.")
                             }
                         }
-                    }
                     else -> logger.info("User already exists. Ignore registration attempt")
                 }
             }
@@ -58,7 +58,7 @@ class RegistrationResource(
     @GetMapping
     fun activate(@RequestParam("token", required = true) token: String, uriComponentsBuilder: UriComponentsBuilder) =
             token.let {
-                getRegistrationTokenUser(it).let {
+                jwtService.getRegistrationTokenUser(it).let {
                     registrationDataRepository.findByUsername(it).takeIf {
                         it?.registrationToken == token && userRepository.findByUsername(it.username!!) == null
                     } .let { registrationData ->

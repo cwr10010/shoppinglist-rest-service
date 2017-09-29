@@ -33,14 +33,14 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsService) : OncePerRequestFilter() {
+class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsService, private val jwtService: JwtService) : OncePerRequestFilter() {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) =
             request.getHeader("Authorization").let { token ->
                 when (token != null && token.startsWith("Bearer ")) {
                     true -> token.substring(7).let { authToken ->
                         try {
-                            getUsernameFromToken(authToken)
+                            jwtService.getUsernameFromToken(authToken)
                         } catch (ex: JwtException) {
                             logger.warn("Token invalid")
                             null
@@ -61,7 +61,7 @@ class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsSe
 
     private fun updateAuthentication(request: HttpServletRequest, username: String, authToken: String) =
             userDetailsService.loadUserByUsername(username).let { userDetails ->
-                if (validateToken(authToken, userDetails)) {
+                if (jwtService.validateToken(authToken, userDetails)) {
                     UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities).apply {
                         details = WebAuthenticationDetailsSource().buildDetails(request)
                     }.let {
@@ -96,7 +96,7 @@ class JwtMvcConfig : WebMvcConfigurerAdapter() {
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService) : WebSecurityConfigurerAdapter() {
+class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService, val jwtService: JwtService) : WebSecurityConfigurerAdapter() {
 
     @Autowired
     fun configureAuthentication(authenticationManagerBuilder: AuthenticationManagerBuilder, passwordEncoder: PasswordEncoder) {
@@ -107,7 +107,7 @@ class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEnt
     fun passwordEncoder() = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userDetailsService)
+    fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userDetailsService, jwtService)
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource =

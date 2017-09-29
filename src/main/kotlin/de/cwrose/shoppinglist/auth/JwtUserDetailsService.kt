@@ -23,7 +23,7 @@ class JwtUserDetailsService(val userRepository: UserRepository) : UserDetailsSer
     }
 }
 
-internal fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.passwordHash!!, user.active, user.authorities)
+private fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.passwordHash!!, user.active, user.authorities)
 
 class JwtUser(var id: String, private val username: String, private val password: String, val active: Boolean, private val authorities: Collection<Authority>) : UserDetails {
 
@@ -42,6 +42,6 @@ class JwtUser(var id: String, private val username: String, private val password
     override fun isAccountNonLocked() = active
 }
 
-internal fun mapToGrantedAuthorities(authorities: Collection<Authority>): MutableCollection<GrantedAuthority> {
+private fun mapToGrantedAuthorities(authorities: Collection<Authority>): MutableCollection<GrantedAuthority> {
     return authorities.map { (name) -> SimpleGrantedAuthority(name!!.name) }.toMutableList()
 }

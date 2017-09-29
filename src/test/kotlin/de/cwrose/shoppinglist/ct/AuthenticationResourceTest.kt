@@ -2,7 +2,6 @@ package de.cwrose.shoppinglist.ct
 
 import de.cwrose.shoppinglist.Application
 import de.cwrose.shoppinglist.auth.JwtUser
-import de.cwrose.shoppinglist.auth.generateAuthToken
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.test.context.SpringBootTest
@@ -106,7 +105,7 @@ class AuthenticationResourceTest : TestBase() {
 
     @Test
     fun testRefreshTokenExpiredForbidden() {
-        generateAuthToken(
+        jwtService.generateAuthToken(
                 JwtUser("id", ADMIN.json["username"] as String, "password", true, emptyList()),
                 Date(LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli())).let {
 

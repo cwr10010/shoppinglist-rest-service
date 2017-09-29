@@ -26,6 +26,19 @@ import javax.persistence.Table
 import javax.persistence.Temporal
 import javax.persistence.TemporalType
 
+
+data class JwtAuthenticationResponse(
+        @JsonProperty("auth_token")
+        val authToken: String? = null,
+
+        @JsonProperty("id_token")
+        val idToken: String? = null,
+
+        val expires: Number? = null
+)
+
+data class JwtAuthenticationRequest(val username: String, val password: String)
+
 @Entity
 @Table(name = "SHOPPING_LIST_ITEM")
 data class ShoppingListItem(

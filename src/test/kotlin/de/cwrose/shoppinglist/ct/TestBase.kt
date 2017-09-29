@@ -10,6 +10,7 @@ import de.cwrose.shoppinglist.ShoppingListItemsRepository
 import de.cwrose.shoppinglist.ShoppingListsRepository
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.auth.JwtService
 import net.minidev.json.JSONObject
 import org.junit.After
 import org.junit.Before
@@ -25,7 +26,6 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
 import javax.annotation.PostConstruct
-import kotlin.coroutines.experimental.EmptyCoroutineContext.plus
 
 open class TestBase {
 
@@ -53,6 +53,8 @@ open class TestBase {
     @Autowired
     lateinit var passwordEncoder: PasswordEncoder
 
+    @Autowired
+    lateinit var jwtService: JwtService
 
     @Autowired
     lateinit var transactionManager: PlatformTransactionManager
