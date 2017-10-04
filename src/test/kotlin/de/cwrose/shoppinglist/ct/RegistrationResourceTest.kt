@@ -45,7 +45,7 @@ class RegistrationResourceTest : TestBase() {
 
 
         HttpEntity<String>(user.toString(), standardHeaders("")).let {
-            restTemplate.getForEntity("/register?token=${token}", UserVO::class.java)
+            restTemplate.getForEntity("/register?token=$token", UserVO::class.java)
         }.let {
             assertEquals(HttpStatus.OK, it.statusCode)
             assertEquals("Max", it.body.username)
@@ -55,6 +55,6 @@ class RegistrationResourceTest : TestBase() {
 }
 
 internal fun extractTokenFromMail(message: MimeMessage) =
-    message.content.let {
-        it as String
-    } .let { it.replace("\r\n", "") }
+        message.content.let {
+            it as String
+        }.replace("\r\n", "")

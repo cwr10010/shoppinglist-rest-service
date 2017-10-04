@@ -1,10 +1,13 @@
 package de.cwrose.shoppinglist.auth
 
+import de.cwrose.shoppinglist.AuthorityName
+import de.cwrose.shoppinglist.UserRepository
 import io.jsonwebtoken.JwtException
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
@@ -14,6 +17,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -33,7 +37,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsService, private val jwtService: JwtService) : OncePerRequestFilter() {
+class JwtAuthenticationTokenFilter(private val userRepository: UserRepository, private val userDetailsService: UserDetailsService, private val jwtService: JwtService) : OncePerRequestFilter() {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) =
             request.getHeader("Authorization").let { token ->
@@ -49,7 +53,9 @@ class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsSe
                                 null -> logger.warn("No username in authorization token")
                                 else -> when (SecurityContextHolder.getContext()) {
                                     null -> logger.warn("Security context empty")
-                                    else -> updateAuthentication(request, username, authToken)
+                                    else -> {
+                                        updateAuthentication(request, username, authToken)
+                                    }
                                 }
                             }
                         }
@@ -61,11 +67,44 @@ class JwtAuthenticationTokenFilter(private val userDetailsService: UserDetailsSe
 
     private fun updateAuthentication(request: HttpServletRequest, username: String, authToken: String) =
             userDetailsService.loadUserByUsername(username).let { userDetails ->
+                checkIfUserMatchesUriId(request, userDetails)
                 if (jwtService.validateToken(authToken, userDetails)) {
                     UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities).apply {
                         details = WebAuthenticationDetailsSource().buildDetails(request)
                     }.let {
                         SecurityContextHolder.getContext().authentication = it
+                    }
+                }
+            }
+
+    private fun checkIfUserMatchesUriId(request: HttpServletRequest, userDetails: UserDetails) =
+            takeUserIdFromRequest(request).let { userIdFromRequestUri ->
+                when {
+                    userIdFromRequestUri.isEmpty() -> logger.debug("no user id in url, skipping check")
+                    else -> if (AuthorityName.ROLE_ADMIN.name !in userDetails.authorities.map { it.authority }) {
+                        userRepository.findOne(userIdFromRequestUri).let {
+                            when (it) {
+                                null -> throw BadCredentialsException("UNKNOWN: Access denied")
+                                else -> if (!it.username.equals(userDetails.username)) {
+                                    throw BadCredentialsException("NOT ALLOWED: Access denied")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+    private fun takeUserIdFromRequest(request: HttpServletRequest) =
+            request.requestURI.let {
+                when {
+                    it.startsWith("/api/users") -> {
+                        it.substringAfter("users")
+                            .substringBefore("shopping-list")
+                            .replace("/", "")
+                    }
+                    else -> {
+                        ""
                     }
                 }
             }
@@ -96,7 +135,7 @@ class JwtMvcConfig : WebMvcConfigurerAdapter() {
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService, val jwtService: JwtService) : WebSecurityConfigurerAdapter() {
+class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService, val userRepository: UserRepository, val jwtService: JwtService) : WebSecurityConfigurerAdapter() {
 
     @Autowired
     fun configureAuthentication(authenticationManagerBuilder: AuthenticationManagerBuilder, passwordEncoder: PasswordEncoder) {
@@ -107,7 +146,7 @@ class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEnt
     fun passwordEncoder() = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userDetailsService, jwtService)
+    fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userRepository, userDetailsService, jwtService)
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource =

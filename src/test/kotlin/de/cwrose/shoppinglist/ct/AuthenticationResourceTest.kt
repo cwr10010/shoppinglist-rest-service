@@ -1,9 +1,11 @@
 package de.cwrose.shoppinglist.ct
 
 import de.cwrose.shoppinglist.Application
+import de.cwrose.shoppinglist.auth.JwtService
 import de.cwrose.shoppinglist.auth.JwtUser
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,6 +20,9 @@ import kotlin.test.assertEquals
 @RunWith(SpringRunner::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
 class AuthenticationResourceTest : TestBase() {
+
+    @Autowired
+    private lateinit var jwtService: JwtService
 
     @Test
     fun testAuthenticateOk() {
@@ -128,7 +133,7 @@ class AuthenticationResourceTest : TestBase() {
     fun testLogout() {
         authenticate().let { response ->
             validAuthResponse(response).let {
-                var token = extractToken(response.body)
+                val token = extractToken(response.body)
                 logout(token.auth_token).let {
                     validLogoutResponse(it)
                 }

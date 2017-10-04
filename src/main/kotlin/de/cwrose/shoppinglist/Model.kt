@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.hibernate.annotations.Type
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.util.Date
 import java.util.UUID
@@ -38,6 +40,17 @@ data class JwtAuthenticationResponse(
 )
 
 data class JwtAuthenticationRequest(val username: String, val password: String)
+
+data class UserShoppingList(
+        @JsonProperty("shopping_list_id")
+        var shoppinglistId: String?,
+        @JsonProperty("shopping_list_name")
+        var shoppinglistName: String?,
+        @JsonProperty("owners_id")
+        var ownersId: String?,
+        @JsonProperty("owners_name")
+        var ownersName: String?
+)
 
 @Entity
 @Table(name = "SHOPPING_LIST_ITEM")
@@ -197,6 +210,9 @@ interface ShoppingListItemsRepository : JpaRepository<ShoppingListItem, String>
 interface ShoppingListsRepository : JpaRepository<ShoppingList, String> {
 
     fun findByOwnersUserId(ownersUserId: String): ShoppingList
+
+    @Query("SELECT sl.* FROM user u, accessable_for_user_ids au, shopping_list sl WHERE u.id=:userId AND au.user_id=u.id AND sl.id=au.shoppinglist_id", nativeQuery = true)
+    fun findShoppingListsAuthorizedForUser(@Param("userId") userId: String): List<ShoppingList>
 }
 
 @Repository

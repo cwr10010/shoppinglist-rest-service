@@ -1,4 +1,4 @@
-FROM openjdk:8
+FROM openjdk:8-alpine
 
 ENV HOME=/app
 ENV APP_HOME=/app
@@ -8,8 +8,8 @@ ENV APP_CONFIG=$APP_HOME/config
 ENV TZ=Europe/Berlin
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN useradd -u 7777 --create-home -d $APP_HOME -s /bin/nologin -c "Docker image user" $APP_USER
-RUN apt-get update && apt-get -y install sudo
+RUN adduser -D -u 7777 -h $APP_HOME -s /bin/nologin $APP_USER
+RUN apk --update add sudo
 
 ADD /build/libs $APP_HOME
 

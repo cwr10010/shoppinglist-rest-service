@@ -55,7 +55,7 @@ class AuthenticationResource(
             }
 
     @GetMapping("logout")
-    fun logout(response: HttpServletResponse) = response.addCookie(jwtService.deleteRefreshCookie())
+    fun logout(response: HttpServletResponse) = response.addCookie(jwtService.emptyRefreshCookie())
 
     fun authenticate(response: HttpServletResponse, username: String, token: String? = null) =
             jwtService.createOrUpdateRefreshCookie(username, token).let  {

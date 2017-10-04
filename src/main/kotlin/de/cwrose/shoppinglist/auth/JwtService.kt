@@ -58,7 +58,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
             .setClaims(hashMapOf("username" to username as Any))
             .setSubject("RegistrationToken")
             .setIssuedAt(issueDate)
-            .setExpiration(Date(issueDate.time + Companion.TOKEN_EXPIRATION * 1000L))
+            .setExpiration(Date(issueDate.time + TOKEN_EXPIRATION * 1000L))
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
@@ -108,7 +108,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
                 maxAge = JwtService.REFRESH_EXPIRATION
             }
 
-    internal fun deleteRefreshCookie() =
+    internal fun emptyRefreshCookie() =
             Cookie("RefreshCookie", null).apply {
                 path = refreshCookiePath
                 secure = refreshCookieSecure

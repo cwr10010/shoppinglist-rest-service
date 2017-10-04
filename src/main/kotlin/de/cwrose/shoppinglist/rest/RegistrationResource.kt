@@ -36,9 +36,12 @@ class RegistrationResource(
 
     @PostMapping
     fun register(@RequestBody registrationData: RegistrationData) =
-            userRepository.findByUsername(registrationData.username!!).let {
-                when (it) {
-                    null -> registrationData.apply {
+            registrationData.apply {
+                username = username?.trim()
+            } .let {
+                userRepository.findByUsername(registrationData.username!!).let {
+                    when (it) {
+                        null -> registrationData.apply {
                             registrationToken = jwtService.generateRegistrationToken(username!!)
                             passwordHash = passwordEncoder.encode(password)
                         }.let { enrichedRegistrationData ->
@@ -51,7 +54,8 @@ class RegistrationResource(
                                 }
                             }
                         }
-                    else -> logger.info("User already exists. Ignore registration attempt")
+                        else -> logger.info("User already exists. Ignore registration attempt")
+                    }
                 }
             }
 

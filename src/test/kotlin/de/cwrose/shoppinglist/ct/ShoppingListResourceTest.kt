@@ -22,6 +22,8 @@ class ShoppingListResourceTest : TestBase() {
 
     var token: String? = null
 
+    var shoppingListId: String? = null
+
     @Before
     override fun setup() {
         super.setup()
@@ -38,6 +40,14 @@ class ShoppingListResourceTest : TestBase() {
         token = authenticate(USER_1).let {
             assertEquals(HttpStatus.OK, it.statusCode)
             extractToken(it.body).auth_token
+        }
+        shoppingListId = usersShoppingList(location, token).let { sle: ResponseEntity<String> ->
+            assertEquals(HttpStatus.OK, sle.statusCode)
+            val gson = Gson()
+            gson.fromJson<List<UsersShoppingListVO>>(sle.body, typeToken<List<UsersShoppingListVO>>()).let {
+                assertEquals(1, it.size)
+                it.first().shopping_list_id
+            }
         }
     }
 
@@ -59,7 +69,7 @@ class ShoppingListResourceTest : TestBase() {
             "description" To "Tasty Cheese"
             "order" To 0
         }.let { entry1 ->
-            addShoppingListEntry(location, "[$entry1]", token).let { sle: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId, "[$entry1]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -79,7 +89,7 @@ class ShoppingListResourceTest : TestBase() {
             "order" To 1
             "checked" To true
         }.let { entry2 ->
-            addShoppingListEntry(location, "[$entry2]", token).let { sle: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId,"[$entry2]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -115,11 +125,11 @@ class ShoppingListResourceTest : TestBase() {
             "checked" To true
         }
 
-        addShoppingListEntry(location, "[$first, $second]", token).let { sle: ResponseEntity<String> ->
+        addShoppingListEntry(location, shoppingListId, "[$first, $second]", token).let { sle: ResponseEntity<String> ->
             assertEquals(HttpStatus.OK, sle.statusCode)
         }
 
-        searchShoppingList(location, "Milk", token).let { sle: ResponseEntity<String> ->
+        searchShoppingList(location, shoppingListId, "Milk", token).let { sle: ResponseEntity<String> ->
             assertEquals(HttpStatus.OK, sle.statusCode)
             val gson = Gson()
             gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -136,7 +146,7 @@ class ShoppingListResourceTest : TestBase() {
 
     @Test
     fun indexRead() {
-        getShoppingList(location, token).let { sle: ResponseEntity<String> ->
+        getShoppingList(location, shoppingListId, token).let { sle: ResponseEntity<String> ->
             assertEquals(HttpStatus.OK, sle.statusCode)
             val gson = Gson()
             gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -150,7 +160,7 @@ class ShoppingListResourceTest : TestBase() {
             "order" To 0
             "checked" To true
         }.let { entry1 ->
-            addShoppingListEntry(location, "[$entry1]", token).let { sle: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId, "[$entry1]", token).let { sle: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sle.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -164,7 +174,7 @@ class ShoppingListResourceTest : TestBase() {
             }
         }
 
-        getShoppingList(location, token).let { sle: ResponseEntity<String> ->
+        getShoppingList(location, shoppingListId, token).let { sle: ResponseEntity<String> ->
             assertEquals(HttpStatus.OK, sle.statusCode)
             val gson = Gson()
             gson.fromJson<List<ShoppingListEntryVO>>(sle.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -186,12 +196,12 @@ class ShoppingListResourceTest : TestBase() {
             "order" To 0
             "checked" To true
         }.let { entry1 ->
-            addShoppingListEntry(location, "[$entry1]", token).let { addResponse: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId, "[$entry1]", token).let { addResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, addResponse.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(addResponse.body, typeToken<List<ShoppingListEntryVO>>()).let { gsonResult ->
                     assertEquals(1, gsonResult.size)
-                    getShoppingListEntry(location, gsonResult[0].id!!, token).let { getResponse ->
+                    getShoppingListEntry(location, shoppingListId, gsonResult[0].id!!, token).let { getResponse ->
                         assertEquals("Cheese", getResponse.body.name)
                         assertEquals("Tasty Cheese", getResponse.body.description)
                         assertEquals(0, getResponse.body.order)
@@ -212,7 +222,7 @@ class ShoppingListResourceTest : TestBase() {
             "order" To 0
             "checked" To false
         }.let { entry1 ->
-            addShoppingListEntry(location, "[$entry1]", token).let { sleResponse: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId, "[$entry1]", token).let { sleResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, sleResponse.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(sleResponse.body, typeToken<List<ShoppingListEntryVO>>()).let {
@@ -223,7 +233,7 @@ class ShoppingListResourceTest : TestBase() {
                         "order" To 1
                         "checked" To true
                     }.let { entry2 ->
-                        updateShoppingListEntry(location, it[0].id!!, entry2.toString(), token).let { sle: ResponseEntity<ShoppingListEntryVO> ->
+                        updateShoppingListEntry(location, shoppingListId, it[0].id!!, entry2.toString(), token).let { sle: ResponseEntity<ShoppingListEntryVO> ->
                             assertEquals(HttpStatus.OK, sle.statusCode)
                             assertEquals(it[0].id, sle.body.id)
                             assertEquals("Milk", sle.body.name)
@@ -246,14 +256,14 @@ class ShoppingListResourceTest : TestBase() {
             "description" To "Tasty Cheese"
             "order" To 0
         }.let { entry1 ->
-            addShoppingListEntry(location, "[$entry1]", token).let { addResponse: ResponseEntity<String> ->
+            addShoppingListEntry(location, shoppingListId, "[$entry1]", token).let { addResponse: ResponseEntity<String> ->
                 assertEquals(HttpStatus.OK, addResponse.statusCode)
                 val gson = Gson()
                 gson.fromJson<List<ShoppingListEntryVO>>(addResponse.body, typeToken<List<ShoppingListEntryVO>>()).let { sleList ->
                     assertEquals(1, sleList.size)
-                    deleteShoppingListEntry(location, sleList[0].id!!, token).let { deleteResult ->
+                    deleteShoppingListEntry(location, shoppingListId, sleList[0].id!!, token).let { deleteResult ->
                         assertEquals(HttpStatus.OK, deleteResult.statusCode)
-                        getShoppingList(location, token).let { getResult: ResponseEntity<String> ->
+                        getShoppingList(location, shoppingListId, token).let { getResult: ResponseEntity<String> ->
                             assertEquals(HttpStatus.OK, getResult.statusCode)
                             val gson2 = Gson()
                             gson2.fromJson<List<ShoppingListEntryVO>>(getResult.body, typeToken<List<ShoppingListEntryVO>>()).let {

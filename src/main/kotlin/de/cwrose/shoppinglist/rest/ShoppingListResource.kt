@@ -1,9 +1,10 @@
 package de.cwrose.shoppinglist.rest
 
-import de.cwrose.shoppinglist.ShoppingList
 import de.cwrose.shoppinglist.ShoppingListItem
 import de.cwrose.shoppinglist.ShoppingListItemsRepository
 import de.cwrose.shoppinglist.ShoppingListsRepository
+import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.UserShoppingList
 import mu.KLogging
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -18,47 +19,70 @@ import org.springframework.web.bind.annotation.RestController
 @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 @RestController
 @RequestMapping("/users/{user_id}/shopping-list")
-class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shoppingListItems: ShoppingListItemsRepository) {
+class ShoppingListResource(
+        val userRepository: UserRepository,
+        val shoppingLists: ShoppingListsRepository,
+        val shoppingListItems: ShoppingListItemsRepository) {
 
     @GetMapping
-    fun index(@PathVariable("user_id") user_id: String, @RequestParam("term", required = false) term: String?) =
-            findShoppinglistsOfUser(user_id).let {
+    fun list(@PathVariable("user_id") user_id: String) =
+            shoppingLists.findShoppingListsAuthorizedForUser(user_id).let { authorizedShoppingLists ->
+                userRepository.findOne(user_id).let { user ->
+                    authorizedShoppingLists.map {
+                        UserShoppingList(it.id, it.name, user.id, user.username)
+                    }
+                }
+            }
+
+    @GetMapping("{shopping-list_id}/entries")
+    fun entries(
+            @PathVariable("user_id") user_id: String,
+            @PathVariable("shopping-list_id") shoppingListId: String,
+            @RequestParam("term", required = false) term: String?) =
+            findShoppinglistForUser(user_id, shoppingListId).shoppingListItems.let {
                 logger.info("Find all shopping list items for user $user_id")
                 when (term) {
-                    null -> it.flatMap { shoppingList ->  shoppingList.shoppingListItems }
-                    else -> it.flatMap {
+                    null -> it
+                    else -> {
                         logger.info("Filter shopping list for user $user_id with term $term")
-                        it.shoppingListItems.filter {
+                        it.filter {
                             it.name!!.contains(term, true)
                         }
                     }
                 }
             }.sortedBy { it.order }
 
-    @PostMapping
-    fun index(@PathVariable("user_id") user_id: String, @RequestBody list: Set<ShoppingListItem>) =
-            findShoppinglistsOfUser(user_id).let {
-                it.single().let { shoppingList ->
-                    logger.debug("Shoppinglist: ${shoppingList} with id ${shoppingList.id}")
-                    list.onEach { item ->
-                        item.userId = user_id
-                        item.shoppingList = shoppingList
-                    } .let {
-                        logger.debug("Items to be added: ${it}")
-                        shoppingList.shoppingListItems += it
-                        logger.info("Added List of ShoppingListItems ${it.map { it.id }} to User $user_id")
-                        shoppingLists.save(shoppingList)
-                    }
+    @PostMapping("{shopping-list_id}/entries")
+    fun entries(
+            @PathVariable("user_id") user_id: String,
+            @PathVariable("shopping-list_id") shoppingListId: String,
+            @RequestBody list: Set<ShoppingListItem>) =
+            findShoppinglistForUser(user_id, shoppingListId).let { shoppingList ->
+                logger.debug("Shoppinglist: $shoppingList with id ${shoppingList.id}")
+                list.onEach { item ->
+                    item.userId = user_id
+                    item.shoppingList = shoppingList
+                } .let {
+                    logger.debug("Items to be added: $it")
+                    shoppingList.shoppingListItems += it
+                    logger.info("Added List of ShoppingListItems ${it.map { it.id }} to User $user_id")
+                    shoppingLists.save(shoppingList)
                 }.shoppingListItems.sortedBy { it.order }
             }
 
-    @GetMapping("/{id}")
-    fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
-            shoppingListItem(user_id, id)
+    @GetMapping("{shopping-list_id}/entries/{id}")
+    fun entry(
+            @PathVariable("user_id") user_id: String,
+            @PathVariable("shopping-list_id") shoppingListId: String,
+            @PathVariable("id") id: String) = shoppingListItem(user_id, shoppingListId, id)
 
-    @PostMapping("/{id}")
-    fun entry(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String, @RequestBody shoppingListItem: ShoppingListItem) =
-            shoppingListItem(user_id, id).apply {
+    @PostMapping("{shopping-list_id}/entries/{id}")
+    fun entry(
+            @PathVariable("user_id") user_id: String,
+            @PathVariable("shopping-list_id") shoppingListId: String,
+            @PathVariable("id") id: String,
+            @RequestBody shoppingListItem: ShoppingListItem) =
+            shoppingListItem(user_id, shoppingListId, id).apply {
                 name = shoppingListItem.name
                 description = shoppingListItem.description
                 order = shoppingListItem.order
@@ -68,31 +92,30 @@ class ShoppingListResource(val shoppingLists: ShoppingListsRepository, val shopp
                 shoppingListItems.save(it)
             }
 
-    @DeleteMapping("/{id}")
-    fun entryDelete(@PathVariable("user_id") user_id: String, @PathVariable("id") id: String) =
-            findShoppinglistsOfUser(user_id).let { usersShoppingLists ->
-                usersShoppingLists.single().let { shoppingList ->
-                    shoppingListItems.getOne(id).let {
-                        logger.info("Deleting ShoppingListItem $id for User $user_id")
-                        shoppingList.shoppingListItems -= it
-                        shoppingLists.save(shoppingList)
-                        shoppingListItems.delete(it)
-                    }
-                    shoppingList
+    @DeleteMapping("{shopping-list_id}/entries/{id}")
+    fun entryDelete(
+            @PathVariable("user_id") user_id: String,
+            @PathVariable("shopping-list_id") shoppingListId: String,
+            @PathVariable("id") id: String) =
+            findShoppinglistForUser(user_id, shoppingListId).let { shoppingList ->
+                shoppingListItems.getOne(id).let {
+                    logger.info("Deleting ShoppingListItem $id for User $user_id")
+                    shoppingList.shoppingListItems -= it
+                    shoppingLists.save(shoppingList)
+                    shoppingListItems.delete(it)
                 }
+                shoppingList
             }.shoppingListItems.sortedBy { it.order }
 
-    private fun shoppingListItem(user_id: String, id: String) =
-            findShoppinglistsOfUser(user_id).let { shoppingList ->
-                shoppingList.single().let {
-                    it.shoppingListItems.single { it.id == id }
-                }
+    private fun shoppingListItem(user_id: String, shoppingListId: String, id: String) =
+            findShoppinglistForUser(user_id, shoppingListId).let { shoppingList ->
+                shoppingList.shoppingListItems.single { it.id == id }
             }
 
-    private fun findShoppinglistsOfUser(user_id: String): List<ShoppingList> =
-        shoppingLists.findAll().filter {
-            it.accessableForUserIds.any { it.id == user_id }
-        }
+    private fun findShoppinglistForUser(user_id: String, shoppingListId: String) =
+            shoppingLists.findShoppingListsAuthorizedForUser(user_id).single {
+                it.id == shoppingListId
+            }
 
     companion object : KLogging()
 }

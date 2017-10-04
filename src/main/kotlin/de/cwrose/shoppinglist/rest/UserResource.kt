@@ -63,7 +63,7 @@ class UserResource(
                 when (user) {
                     null -> logger.warn("Unknown user $user_id")
                     else -> refreshTokenRepository.findAllByUser(user).let { tokens ->
-                        logger.info("Deleting ${user_id}")
+                        logger.info("Deleting $user_id")
                         refreshTokenRepository.delete(tokens)
                     }.let {
                         shoppingListsRepository.findByOwnersUserId(user_id).let {
