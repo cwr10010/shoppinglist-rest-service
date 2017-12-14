@@ -6,7 +6,6 @@ jobs:
   include:
     - stage: test
       env:
-      - secure: qu0YLg8rW0YGTuEVbYZdjLJdTfn+Z2tONy/8BmBrED4ndSbSNCC+f+5uGhuK5q80ACSiqpPUVFbwww8euqVrOM26s3vxmf6ODT9TVDS7HaRJeJ8R/lKxozyQFCg1WiBipdVhGwxECYBNsx2hsaX4XY8JKk+ZqdZYRIXJpGuqEvGdB2MtQH1NQ/oX+BQ3+WP4t6OTANm3L4kqMgToqGdHHuRrPw8gKNPE3F9rqZp9w5FviM4A+d/TemzrI32aJPll5s21SVP0W5ImfYV11haGdQm58jiMiSg0W4Aw3PeG1OfiNbwp4jJiYeU4pUzsRUfLfcTbHYf3m88vScZsxwXKy4fPsPfJvADPYV740v/fzzaWKnxmB8/TOqMfWIZtxnJPoBodxB5ZDU9NPF7P6dKqB0ymTAhNUOTeC0HfDFZ/dAffazYLTOJ0OdBpZCd79t45h0N1GRA8zUmvK/y4REZIjpnohnvFOBOUVlHHvXnPrdJsziWgf6TD2FnguhQv26bVMDaP2cOc3J1XNpQI47J+9P7VF840Ovpa/38vsLbP91Pc6EmS+1w7L+/66Yx6QYZc63ZOy9APk3y1/TYCmqrV/M7nUhIgzCZ2ADqJzvs2CL4tXQ+NlTlo7sjzOb+A5Ko4QaW7gfEwBGpXoaDmKlgs4/AjCPJo7JEiAZS7S+tYLig= # DOCKER_EMAIL
       - secure: xz3wiX1UL4v0aOV7Y34krkig8kHBynuwaeGk/Drsr5x06KinJb41Flnna2YHuIbIKI4l013zZ3Xg+IPIZnyMG06zCg/JTBBinwk+y15o/T9XCkKPdPtPmQeY8VFIpbeHakYkZfqQT5MrTfw48PPkGTJCZJB7eTOgCQ+yuw1/CckzPYV9Y4OxuJ3qOqNqCUdphSYWgdx3iCBTolfj4NaSDt3ZeBoBXiuOki2pnmLvGXX2p2Oj9Ui123TycvQ0wAHXPu31ulqeyMu+ypCMkPQx4ZkjPtrbAxofOWbDk8cjcpbh0aQWZf+p+PMcmd/GuC5IuZmaWjz2Xg70hxe1e/j37/wXiQzH8oXfjLMp9/SOdlcC6noQHM+OHL5fSBurhTSB49pN/EHoAlFtuiXNeY/0+XVdHJOPGFlURnmmxDhAKp0eqwvKtN3QhX/4noJy6QetaQJfYepJt3XZoNJ973H7xY0kh8Jk2tMYFdyJFeb4znQaVo9l0MQCMTdwp+gwAUnsKINlf2/7rrt2TEINXpYNBhtj+VB3U+w9XTDmz1NBjeDG3KReROOB1Bdz7QgygCLUKVVGlXDa5mvRlEpJhxM0a9NSmsvP1Rlj/bXxikZm4rot2OqMXvozYS1dS3dwHWnHAPP5RC8wqhKeoAOi/YeV8BkeWMTl/2BcTI98rgvSTKU= # DOCKER_USER
       - secure: fM0VMHDML7L9Sz+9zn/TkA8wpSFVbm7lDp1kvJWcfbl66/7hoFfOKa9x2QbhIXUf7W95K5ksEJtmQjxKVQ1eAbjLbkzI3/vGjD8Buy1ZSUBCKpwQmWRZlMqAsvAx3aUhOzZQqejcncTHN57JYJ1DqfY7+Y0gAkFWwN9Bvwwr7jz8zQda4eH6u5dZzSPxh9GxftkuC3vFQH8hg0ugcvNcKhXrAsvcsfOgXr5D39hLTubn8+VAdKExvpt381SLZLAmU5flUCpPqFbpa3x+DIQgugnlisjAMOQw7VOVxqUpp5vuKcnOWdcqfWucvbOzI2E4vcpHmdT87A8yPQQ8TOzZRuTW4NwWyTiMh9bGmVeOXi1rFfX0m5Y5plxQGEZoWPCSWEsm5LGw3/mMg/SxJlcGYIidF35IOeXd2J+DeVyxeN9onDe8NnSQfxVTds6slGM8WystgLKWP6B+3Odo1XlwUUZi0clcWTaoc4aaWS/3P4I0oJybDWHVJGoEceaBQzs9gg3ENe3wpTvkuiWUTb5tTNsht2xBtRu5OQg9tU1wVmNvPRwCxCYirdRbdn7Wh7hlX1gRIUrT4+W/hhXdcP/ldRvwFGa79JctbLBKuGgoSsIO+lmfjM8DMQn/OpCVCBGru1+liysB0JLphv2R8iy5gAzrlhRGeM/mKw8A/BxNhPI= # DOCKER_PASS
       - COMMIT=${TRAVIS_COMMIT::8}
@@ -18,7 +17,7 @@ jobs:
             - oracle-java8-installer
       after_success:
         - ./gradlew jacocoTestReport coveralls
-        - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+        - docker login -u $DOCKER_USER -p $DOCKER_PASS
         - export REPO=cwr10010docker/shoppinglist-rest-service
         - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
         - docker build -f Dockerfile -t $REPO:$COMMIT .
