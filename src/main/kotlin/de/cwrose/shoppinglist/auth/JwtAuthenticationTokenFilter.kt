@@ -2,6 +2,7 @@ package de.cwrose.shoppinglist.auth
 
 import de.cwrose.shoppinglist.AuthorityName
 import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.services.JwtService
 import io.jsonwebtoken.JwtException
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,7 +31,7 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.servlet.config.annotation.CorsRegistry
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import java.io.IOException
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
@@ -41,8 +42,8 @@ class JwtAuthenticationTokenFilter(private val userRepository: UserRepository, p
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) =
             request.getHeader("Authorization").let { token ->
-                when (token != null && token.startsWith("Bearer ")) {
-                    true -> token.substring(7).let { authToken ->
+                if (token != null && token.startsWith("Bearer ")) {
+                    token.substring(7).let { authToken ->
                         try {
                             jwtService.getUsernameFromToken(authToken)
                         } catch (ex: JwtException) {
@@ -72,6 +73,7 @@ class JwtAuthenticationTokenFilter(private val userRepository: UserRepository, p
                     UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities).apply {
                         details = WebAuthenticationDetailsSource().buildDetails(request)
                     }.let {
+                        logger.debug("Save user details in security context")
                         SecurityContextHolder.getContext().authentication = it
                     }
                 }
@@ -82,12 +84,12 @@ class JwtAuthenticationTokenFilter(private val userRepository: UserRepository, p
                 when {
                     userIdFromRequestUri.isEmpty() -> logger.debug("no user id in url, skipping check")
                     else -> if (AuthorityName.ROLE_ADMIN.name !in userDetails.authorities.map { it.authority }) {
-                        userRepository.findOne(userIdFromRequestUri).let {
-                            when (it) {
-                                null -> throw BadCredentialsException("UNKNOWN: Access denied")
-                                else -> if (!it.username.equals(userDetails.username)) {
-                                    throw BadCredentialsException("NOT ALLOWED: Access denied")
-                                }
+                        // only check when user is no admin:
+                        userRepository.findById(userIdFromRequestUri).let { user ->
+                            user.filter {
+                                it.username.equals(userDetails.username)
+                            } .orElseThrow {
+                                BadCredentialsException("NOT ALLOWED: Access denied")
                             }
                         }
                     }
@@ -124,7 +126,7 @@ class JwtAuthenticationEntryPoint : AuthenticationEntryPoint {
 }
 
 @Configuration
-class JwtMvcConfig : WebMvcConfigurerAdapter() {
+class JwtMvcConfig : WebMvcConfigurer {
 
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/**")
@@ -149,6 +151,9 @@ class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEnt
     fun authenticationTokenFilter(): JwtAuthenticationTokenFilter = JwtAuthenticationTokenFilter(userRepository, userDetailsService, jwtService)
 
     @Bean
+    override fun authenticationManagerBean() = super.authenticationManagerBean()!!
+
+    @Bean
     fun corsConfigurationSource(): CorsConfigurationSource =
             CorsConfiguration().apply {
                 allowedOrigins = listOf("*")
@@ -156,22 +161,21 @@ class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEnt
                 allowCredentials = true
                 allowedHeaders = listOf("Authorization", "Cache-Control", "Content-Type")
             }.let { configuration ->
-                UrlBasedCorsConfigurationSource().let {
-                    it.registerCorsConfiguration("/**", configuration)
-                    it
+                UrlBasedCorsConfigurationSource().apply {
+                    registerCorsConfiguration("/**", configuration)
                 }
             }
 
-    override fun configure(http: HttpSecurity) =
-            http.let {
-                it.cors()
-                it.csrf().disable()
-                        .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
-                        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                        .authorizeRequests().antMatchers("/auth", "/register").permitAll()
-                        .anyRequest().authenticated()
-                it.addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter::class.java)
-                it.headers().cacheControl()
-                Unit
-            }
+    override fun configure(http: HttpSecurity) {
+        http.let {
+            it.cors()
+            it.csrf().disable()
+                    .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
+                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                    .authorizeRequests().antMatchers("/auth", "/register").permitAll()
+                    .anyRequest().authenticated()
+            it.addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter::class.java)
+            it.headers().cacheControl()
+        }
+    }
 }

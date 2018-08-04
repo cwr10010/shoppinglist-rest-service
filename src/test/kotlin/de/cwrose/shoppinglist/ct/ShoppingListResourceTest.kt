@@ -202,11 +202,11 @@ class ShoppingListResourceTest : TestBase() {
                 gson.fromJson<List<ShoppingListEntryVO>>(addResponse.body, typeToken<List<ShoppingListEntryVO>>()).let { gsonResult ->
                     assertEquals(1, gsonResult.size)
                     getShoppingListEntry(location, shoppingListId, gsonResult[0].id!!, token).let { getResponse ->
-                        assertEquals("Cheese", getResponse.body.name)
-                        assertEquals("Tasty Cheese", getResponse.body.description)
-                        assertEquals(0, getResponse.body.order)
-                        assertEquals(true, getResponse.body.checked)
-                        assertEquals(extractId(location), getResponse.body.user_id)
+                        assertEquals("Cheese", getResponse.body?.name)
+                        assertEquals("Tasty Cheese", getResponse.body?.description)
+                        assertEquals(0, getResponse.body?.order)
+                        assertEquals(true, getResponse.body?.checked)
+                        assertEquals(extractId(location), getResponse.body?.user_id)
                     }
 
                 }
@@ -235,12 +235,12 @@ class ShoppingListResourceTest : TestBase() {
                     }.let { entry2 ->
                         updateShoppingListEntry(location, shoppingListId, it[0].id!!, entry2.toString(), token).let { sle: ResponseEntity<ShoppingListEntryVO> ->
                             assertEquals(HttpStatus.OK, sle.statusCode)
-                            assertEquals(it[0].id, sle.body.id)
-                            assertEquals("Milk", sle.body.name)
-                            assertEquals("Sweet Milk", sle.body.description)
-                            assertEquals(1, sle.body.order)
-                            assertEquals(true, sle.body.checked)
-                            assertEquals(extractId(location), sle.body.user_id)
+                            assertEquals(it[0].id, sle.body?.id)
+                            assertEquals("Milk", sle.body?.name)
+                            assertEquals("Sweet Milk", sle.body?.description)
+                            assertEquals(1, sle.body?.order)
+                            assertEquals(true, sle.body?.checked)
+                            assertEquals(extractId(location), sle.body?.user_id)
 
                         }
                     }
@@ -276,3 +276,4 @@ class ShoppingListResourceTest : TestBase() {
         }
     }
 }
+

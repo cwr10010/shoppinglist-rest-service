@@ -1,21 +1,16 @@
 package de.cwrose.shoppinglist.rest
 
 import de.cwrose.shoppinglist.JwtAuthenticationRequest
-import de.cwrose.shoppinglist.RefreshTokenRepository
+import de.cwrose.shoppinglist.UserRepository
 import de.cwrose.shoppinglist.auth.JwtUser
 import de.cwrose.shoppinglist.auth.JwtUserDetailsService
-import de.cwrose.shoppinglist.auth.JwtService
+import de.cwrose.shoppinglist.services.JwtService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.CookieValue
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletResponse
 
@@ -24,7 +19,7 @@ import javax.servlet.http.HttpServletResponse
 class AuthenticationResource(
         val authenticationManager: AuthenticationManager,
         val userDetailsService: JwtUserDetailsService,
-        val refreshTokenRepository: RefreshTokenRepository,
+        val userRepository: UserRepository,
         val jwtService: JwtService) {
 
     @PostMapping
@@ -42,15 +37,12 @@ class AuthenticationResource(
     @GetMapping
     fun refreshAuthToken(response: HttpServletResponse, @CookieValue("RefreshCookie") refreshCookie: Cookie) =
             refreshCookie.value.let { refreshToken ->
-                jwtService.getRefreshTokenId(refreshToken).let {
-                    refreshTokenRepository.findOne(it).let { token ->
-                        when (token?.valid) {
-                            true -> authenticate(response, token.user!!.username!!, refreshToken).let {
-                                ResponseEntity.ok(it)
-                            }
-                            else -> throw BadCredentialsException("Invalid Refresh Token")
-                        }
+                jwtService.findValidToken(refreshToken).map {
+                    authenticate(response, it.user!!.username!!, refreshToken).let {
+                        ResponseEntity.ok(it)
                     }
+                } .orElseThrow {
+                    BadCredentialsException("Invalid Refresh Token")
                 }
             }
 
@@ -58,11 +50,18 @@ class AuthenticationResource(
     fun logout(response: HttpServletResponse) = response.addCookie(jwtService.emptyRefreshCookie())
 
     fun authenticate(response: HttpServletResponse, username: String, token: String? = null) =
-            jwtService.createOrUpdateRefreshCookie(username, token).let  {
-                cookie -> response.addCookie(cookie)
-            } .let {
-                userDetailsService.loadUserByUsername(username).let { userDetails ->
-                    jwtService.generateRegistrationResponse(userDetails as JwtUser)
+            userRepository.findByUsername(username).map { user ->
+                jwtService.createOrUpdateRefreshCookie(user, token).let  {
+                    cookie -> response.addCookie(cookie)
+                } .let {
+                    userDetailsService.loadUserByUsername(username).let { userDetails ->
+                        jwtService.generateRegistrationResponse(userDetails as JwtUser)
+                    }
                 }
+            } .orElseThrow {
+                UnknownTokenUserException("Unknown user to authenticate")
             }
 }
+
+
+class UnknownTokenUserException(message: String): RuntimeException(message)

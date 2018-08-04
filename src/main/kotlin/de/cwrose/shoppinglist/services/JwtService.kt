@@ -1,27 +1,23 @@
-package de.cwrose.shoppinglist.auth
+package de.cwrose.shoppinglist.services
 
-import de.cwrose.shoppinglist.JwtAuthenticationResponse
-import de.cwrose.shoppinglist.RefreshToken
-import de.cwrose.shoppinglist.RefreshTokenRepository
-import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.*
+import de.cwrose.shoppinglist.auth.JwtUser
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
-import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.crypto.codec.Base64
 import org.springframework.stereotype.Service
-import java.util.Date
+import java.time.Instant
+import java.util.*
 import javax.servlet.http.Cookie
 
 @Service
-class JwtService(val refreshTokenRepository: RefreshTokenRepository,
-                 val userRepository: UserRepository) {
+class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
 
     @Value("\${jwt.secret}")
     fun setSecret(secret: String) {
-        this.secret = Base64.encode(secret.toByteArray())
+        this.secret = Base64.getEncoder().encode(secret.toByteArray())
     }
     lateinit var secret: ByteArray
 
@@ -31,14 +27,14 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
     @Value("\${refresh.cookie.path}")
     var refreshCookiePath: String = "/"
 
-    internal fun generateAuthToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
+    fun generateAuthToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
             .setSubject(user.username)
             .setIssuedAt(issueDate)
             .setExpiration(Date(issueDate.time + EXPIRATION * 1000L))
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    internal fun generateRefreshToken(refreshId: String, issueDate: Date = Date()) = Jwts.builder()
+    fun generateRefreshToken(refreshId: String, issueDate: Date = Date()) = Jwts.builder()
             .setClaims(hashMapOf("refresh_id" to refreshId as Any))
             .setSubject("RefreshToken")
             .setIssuedAt(issueDate)
@@ -46,7 +42,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    internal fun generateIDToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
+    fun generateIDToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
             .setClaims(hashMapOf("id" to user.id as Any))
             .setSubject("IdToken")
             .setIssuedAt(issueDate)
@@ -54,7 +50,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    internal fun generateRegistrationToken(username: String, issueDate: Date = Date()) = Jwts.builder()
+    fun generateRegistrationToken(username: String, issueDate: Date = Date()) = Jwts.builder()
             .setClaims(hashMapOf("username" to username as Any))
             .setSubject("RegistrationToken")
             .setIssuedAt(issueDate)
@@ -62,38 +58,57 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    internal fun updateRefreshToken(token: String, issueDate: Date = Date()) =
+    fun generateShareToken(sharedListId: String, issueDate: Date = Date()) = Jwts.builder()
+            .setClaims(hashMapOf(
+                    "shared_list_id" to sharedListId as Any
+            ))
+            .setSubject("ShareToken")
+            .setIssuedAt(issueDate)
+            .setExpiration(Date(issueDate.time + TOKEN_EXPIRATION * 1000L))
+            .signWith(SignatureAlgorithm.HS512, secret)
+            .compact()
+
+    fun updateRefreshToken(token: String, issueDate: Date = Date()) =
             getAllClaimsFromToken(token).apply {
                 issuedAt = issueDate
             }.let(this::doUpdateToken)
 
-    internal fun validateToken(token: String, userDetails: UserDetails) =
+    fun validateToken(token: String, userDetails: UserDetails) =
             getUsernameFromToken(token).let {
                 userDetails.username == it
             }
 
-    internal fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
+    fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
 
-    internal fun getRefreshTokenId(refreshToken: String) = getAllClaimsFromToken(refreshToken)["refresh_id"] as String
+    fun getRefreshTokenId(refreshToken: String) = getAllClaimsFromToken(refreshToken)["refresh_id"] as String
 
-    internal fun getRegistrationTokenUser(registrationToken: String) = getAllClaimsFromToken(registrationToken)["username"] as String
+    fun getRegistrationTokenUser(registrationToken: String) = getAllClaimsFromToken(registrationToken)["username"] as String
 
-    internal fun createRefreshToken(username: String) =
-            userRepository.findByUsername(username).let { user ->
-                refreshTokenRepository.save(RefreshToken(user, DateTime.now().plusSeconds(REFRESH_EXPIRATION).toDate()))
-            }.let {
+    fun getSharedListId(sharedListToken: String) = getAllClaimsFromToken(sharedListToken)["shared_list_id"] as String
+
+    fun createRefreshToken(user: User) = refreshTokenRepository.save(RefreshToken(user, Instant.now().plusSeconds(REFRESH_EXPIRATION.toLong())))
+             .let {
                 generateRefreshToken(it.id!!)
             }
 
-    fun createOrUpdateRefreshCookie(username: String, token: String? = null) =
+    fun findValidToken(token: String) =
+            getRefreshTokenId(token).let {
+                refreshTokenRepository.findById(it).filter {
+                    it.valid!!
+                }
+            }
+
+    fun createOrUpdateRefreshCookie(user: User, token: String? = null) =
             when (token) {
-                null -> createRefreshToken(username)
+                null -> createRefreshToken(user)
                 else -> {
                     getRefreshTokenId(token).let {
-                        refreshTokenRepository.findOne(it).apply {
-                            expires = DateTime.now().plusSeconds(JwtService.REFRESH_EXPIRATION).toDate()
-                        }.let {
-                            refreshTokenRepository.save(it)
+                        refreshTokenRepository.findById(it).ifPresent {
+                            it.apply {
+                                expires = Instant.now().plusSeconds(REFRESH_EXPIRATION.toLong())
+                            }.let {
+                                refreshTokenRepository.save(it)
+                            }
                         }
                     }
                     updateRefreshToken(token)
@@ -105,10 +120,10 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository,
                 path = refreshCookiePath
                 secure = refreshCookieSecure
                 isHttpOnly = true
-                maxAge = JwtService.REFRESH_EXPIRATION
+                maxAge = REFRESH_EXPIRATION
             }
 
-    internal fun emptyRefreshCookie() =
+    fun emptyRefreshCookie() =
             Cookie("RefreshCookie", null).apply {
                 path = refreshCookiePath
                 secure = refreshCookieSecure

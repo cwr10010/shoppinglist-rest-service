@@ -1,8 +1,8 @@
 package de.cwrose.shoppinglist.ct
 
 import de.cwrose.shoppinglist.Application
-import de.cwrose.shoppinglist.auth.JwtService
 import de.cwrose.shoppinglist.auth.JwtUser
+import de.cwrose.shoppinglist.services.JwtService
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,9 +12,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.util.StringUtils
 import java.net.HttpCookie
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.util.Date
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.*
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
@@ -112,7 +112,7 @@ class AuthenticationResourceTest : TestBase() {
     fun testRefreshTokenExpiredForbidden() {
         jwtService.generateAuthToken(
                 JwtUser("id", ADMIN.json["username"] as String, "password", true, emptyList()),
-                Date(LocalDateTime.now().minusDays(30).toInstant(ZoneOffset.UTC).toEpochMilli())).let {
+                Date.from(Instant.now().minus(30, ChronoUnit.DAYS))).let {
 
             HttpCookie("RefreshCookie", it).let { cookie ->
                 refresh(cookie.toString()).let { refreshResult ->

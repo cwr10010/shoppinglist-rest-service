@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.lang.RuntimeException
 
 @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 @RestController
@@ -27,11 +28,15 @@ class ShoppingListResource(
     @GetMapping
     fun list(@PathVariable("user_id") user_id: String) =
             shoppingLists.findShoppingListsAuthorizedForUser(user_id).let { authorizedShoppingLists ->
-                userRepository.findOne(user_id).let { user ->
-                    authorizedShoppingLists.map {
-                        UserShoppingList(it.id, it.name, user.id, user.username)
+                userRepository.findById(user_id).let { foundUser ->
+                    foundUser.map { user ->
+                        authorizedShoppingLists.map {
+                            UserShoppingList(it.id, it.name, user.id, user.username)
+                        }
                     }
                 }
+            }.orElseThrow {
+                UnknownShoppingListException("No shopping lists found for user")
             }
 
     @GetMapping("{shopping-list_id}/entries")
@@ -62,6 +67,7 @@ class ShoppingListResource(
                 list.onEach { item ->
                     item.userId = user_id
                     item.shoppingList = shoppingList
+                    shoppingListItems.save(item)
                 } .let {
                     logger.debug("Items to be added: $it")
                     shoppingList.shoppingListItems += it
@@ -119,3 +125,5 @@ class ShoppingListResource(
 
     companion object : KLogging()
 }
+
+class UnknownShoppingListException(override val message: String): RuntimeException(message)

@@ -46,8 +46,8 @@ class UserResourceCRUDTest : TestBase() {
     fun testReadUser() {
         readUser(location, token).let {
             assertEquals(HttpStatus.OK, it.statusCode)
-            assertEquals("Max", it.body.username)
-            assertEquals(null, it.body.password)
+            assertEquals("Max", it.body?.username)
+            assertEquals(null, it.body?.password)
         }
     }
 
@@ -60,7 +60,7 @@ class UserResourceCRUDTest : TestBase() {
         }.let { user ->
             updateUser(location, user.toString(), token).let {
                 assertEquals(HttpStatus.OK, it.statusCode)
-                assertEquals("Mini", it.body.username)
+                assertEquals("Mini", it.body?.username)
             }
         }
     }

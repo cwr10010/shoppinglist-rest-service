@@ -3,10 +3,32 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext {
-        kotlin_version = '1.1.51'
-        spring_boot_version = '1.5.7.RELEASE'
+        // compile and runtime
+        kotlin_version = '1.2.60'
+        kotlin_logging_version = '1.5.8'
+        spring_boot_version = '2.0.4.RELEASE'
+        springfox_version = '2.9.2'
+
+        jackson_version = '2.9.6'
+        jackson_module_kotlin_version = '2.9.6'
         json_version = '20170516'
-        jackson_version='2.9.1'
+        jjwt_version = '0.9.1'
+
+        flyway_version = '5.1.4'
+        mysql_version = '8.0.11'
+        h2_version = '1.4.197'
+
+        // test
+        kotson_version = '2.5.0'
+        subetha_smtp_version = '3.1.7'
+
+        // coverage
+        coveralls_gradle_plugin_version = '2.8.2'
+        jacoco_version = '0.8.1'
+
+        // package
+        gradle_docker_compone_plugin_version = '0.8.4'
+        gradle_version_plugin_version = '0.20.0'
     }
 
     repositories {
@@ -19,21 +41,87 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
         classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_version"
 
-        classpath 'net.saliman:gradle-cobertura-plugin:2.5.0'
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1'
+        classpath "org.kt3k.gradle.plugin:coveralls-gradle-plugin:$coveralls_gradle_plugin_version"
 
-        classpath 'com.github.ben-manes:gradle-versions-plugin:0.15.0'
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:$gradle_docker_compone_plugin_version"
+        classpath "com.github.ben-manes:gradle-versions-plugin:$gradle_version_plugin_version"
     }
 }
 
+// build & test
 apply plugin: 'kotlin'
 apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
 apply plugin: 'org.springframework.boot'
-
+apply plugin: 'io.spring.dependency-management'
+// coverage
 apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
-
+// packaging
+apply plugin: 'docker-compose'
 apply plugin: 'com.github.ben-manes.versions'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-stdlib" // Required for Kotlin integration
+    compile "org.jetbrains.kotlin:kotlin-reflect"
+
+    compile "io.github.microutils:kotlin-logging:$kotlin_logging_version"
+
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.springframework.boot:spring-boot-starter-mail'
+    compile 'org.springframework.boot:spring-boot-starter-freemarker'
+
+    compile 'javax.xml.bind:jaxb-api:2.3.0'
+    compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_module_kotlin_version"
+
+    compile "org.flywaydb:flyway-core:$flyway_version"
+    //compile "mysql:mysql-connector-java:$mysql_version"
+    compile 'com.h2database:h2'
+
+    compile "io.jsonwebtoken:jjwt:$jjwt_version"
+
+    compile "io.springfox:springfox-swagger2:$springfox_version"
+    compile "io.springfox:springfox-data-rest:$springfox_version"
+    compile "io.springfox:springfox-bean-validators:$springfox_version"
+
+    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile "com.h2database:h2:$h2_version"
+
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testCompile "com.github.salomonbrys.kotson:kotson:$kotson_version"
+
+    testCompile "org.subethamail:subethasmtp:$subetha_smtp_version"
+}
+
+dockerCompose {
+    useComposeFiles = ['docker-compose-dev.yml'] // like 'docker-compose -f <file>'
+    startedServices = ['srs_api'] // list of services to execute when calling 'docker-compose up' (when not specified, all services are executed)
+    removeImages = "Local" // Other accepted values are: "All" and "Local"
+    waitForTcpPorts = true // turns off the waiting for exposed TCP ports opening
+    dockerComposeWorkingDirectory = 'deploy/'
+    environment.put 'PATH', '/usr/local/bin' // Pass environment variable to 'docker-compose' for substitution in compose file
+}
+
+composeUp.dependsOn(assemble)
+
+test {
+    systemProperty 'spring.profiles.active', 'test'
+}
+
+jacoco {
+    toolVersion = "$jacoco_version"
+    reportsDir = file("$buildDir/jacoco")
+}
 
 jacocoTestReport {
     reports {
@@ -42,50 +130,3 @@ jacocoTestReport {
 }
 
 coveralls.sourceDirs = ['src/main/kotlin']
-
-repositories {
-    mavenCentral()
-
-}
-
-test {
-    systemProperty 'spring.profiles.active', 'test'
-}
-
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // Required for Kotlin integration
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-
-    compile 'io.github.microutils:kotlin-logging:1.4.6'
-
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
-    compile 'org.springframework.boot:spring-boot-starter-security'
-    compile 'org.springframework.boot:spring-boot-starter-mail'
-    compile 'org.springframework.boot:spring-boot-starter-freemarker'
-
-    compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
-    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
-    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-
-    compile 'org.flywaydb:flyway-core:4.2.0'
-    compile 'mysql:mysql-connector-java'
-    //compile 'com.h2database:h2'
-
-    compile 'io.jsonwebtoken:jjwt:0.8.0'
-    compile 'joda-time:joda-time:2.9.9'
-
-    compile "ch.qos.logback:logback-classic:1.2.3"
-    compile "ch.qos.logback:logback-core:1.2.3"
-
-    testCompile "org.springframework.boot:spring-boot-starter-test"
-    testCompile 'com.h2database:h2'
-
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
-    testCompile "com.github.salomonbrys.kotson:kotson:2.5.0"
-
-    testCompile 'org.subethamail:subethasmtp:3.1.7'
-
-}

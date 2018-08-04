@@ -15,17 +15,17 @@ import org.springframework.stereotype.Component
 class JwtUserDetailsService(val userRepository: UserRepository) : UserDetailsService {
 
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String): UserDetails = userRepository.findByUsername(username).let { user ->
-        when (user) {
-            null -> throw UsernameNotFoundException("User not found")
-            else -> createUserDetails(user)
+    override fun loadUserByUsername(username: String): UserDetails = userRepository.findByUsername(username).map { user ->
+            createUserDetails(user)
+        } .orElseThrow {
+            UsernameNotFoundException("User not found")
         }
-    }
+
 }
 
 private fun createUserDetails(user: User) = JwtUser(user.id!!, user.username!!, user.passwordHash!!, user.active, user.authorities)
 
-class JwtUser(var id: String, private val username: String, private val password: String, val active: Boolean, private val authorities: Collection<Authority>) : UserDetails {
+class JwtUser(var id: String, private val username: String, private val password: String, private val active: Boolean, private val authorities: Collection<Authority>) : UserDetails {
 
     override fun getUsername(): String = username
 

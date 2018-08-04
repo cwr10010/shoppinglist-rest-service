@@ -1,14 +1,7 @@
 package de.cwrose.shoppinglist.ct
 
 import com.google.gson.Gson
-import de.cwrose.shoppinglist.Authority
-import de.cwrose.shoppinglist.AuthorityName
-import de.cwrose.shoppinglist.AuthorityRepository
-import de.cwrose.shoppinglist.RefreshTokenRepository
-import de.cwrose.shoppinglist.RegistrationDataRepository
-import de.cwrose.shoppinglist.ShoppingListsRepository
-import de.cwrose.shoppinglist.User
-import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.*
 import net.minidev.json.JSONObject
 import org.junit.After
 import org.junit.Before
@@ -24,6 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
 import javax.annotation.PostConstruct
+import javax.mail.internet.MimeMessage
 
 open class TestBase {
 
@@ -38,6 +32,9 @@ open class TestBase {
 
     @Autowired
     private lateinit var shoppingListRepository: ShoppingListsRepository
+
+    @Autowired
+    private lateinit var sharedShoppingListRepository: SharedShoppingListRepository
 
     @Autowired
     private lateinit var refreshTokenRepository: RefreshTokenRepository
@@ -62,29 +59,24 @@ open class TestBase {
     open fun setup() {
         cleanupDb()
         transactionTemplate.execute {
-            authorityRepository.findByName(AuthorityName.ROLE_USER).let {
-                when (it) {
-                    null -> authorityRepository.save(Authority(AuthorityName.ROLE_USER))
-                    else -> it
-                }
+            authorityRepository.findByName(AuthorityName.ROLE_USER).orElseGet {
+                authorityRepository.save(Authority(AuthorityName.ROLE_USER))
             }
-            authorityRepository.findByName(AuthorityName.ROLE_ADMIN).let {
-                when (it) {
-                    null -> authorityRepository.save(Authority(AuthorityName.ROLE_ADMIN))
-                    else -> it
-                }.let { authority ->
-                    userRepository.save(User(
-                            username = ADMIN.json["username"] as String,
-                            passwordHash = passwordEncoder.encode(ADMIN.json["password"] as String),
-                            active = true,
-                            emailAddress = "foo@example.com",
-                            authorities = setOf(authority)))
-                }
+            authorityRepository.findByName(AuthorityName.ROLE_ADMIN).orElseGet {
+                authorityRepository.save(Authority(AuthorityName.ROLE_ADMIN))
+            }.let { authority ->
+                userRepository.save(User(
+                        username = ADMIN.json["username"] as String,
+                        passwordHash = passwordEncoder.encode(ADMIN.json["password"] as String),
+                        active = true,
+                        emailAddress = "foo@example.com",
+                        authorities = setOf(authority)))
             }
         }
     }
 
     private fun cleanupDb() {
+        sharedShoppingListRepository.deleteAll()
         shoppingListRepository.deleteAll()
         refreshTokenRepository.deleteAll()
         userRepository.deleteAll()
@@ -95,15 +87,15 @@ open class TestBase {
     @After
     open fun destroy() {
         transactionTemplate.execute {
-            userRepository.findByUsername(ADMIN.json["username"] as String).let { user ->
-                refreshTokenRepository.findAllByUser(user!!).let { tokens ->
-                    refreshTokenRepository.delete(tokens)
+            userRepository.findByUsername(ADMIN.json["username"] as String).map { user ->
+                refreshTokenRepository.findAllByUser(user).let { tokens ->
+                    refreshTokenRepository.deleteAll(tokens)
                 }
                 userRepository.delete(user).let {
-                    authorityRepository.findByName(AuthorityName.ROLE_ADMIN).let {
+                    authorityRepository.findByName(AuthorityName.ROLE_ADMIN).map {
                         authorityRepository.delete(it)
                     }
-                    authorityRepository.findByName(AuthorityName.ROLE_USER).let {
+                    authorityRepository.findByName(AuthorityName.ROLE_USER).map {
                         authorityRepository.delete(it)
                     }
 
@@ -153,8 +145,8 @@ open class TestBase {
     }
 
     fun invalidateAllRefreshToken(username: String = ADMIN.json["username"] as String) {
-        userRepository.findByUsername(username).let {
-            refreshTokenRepository.findAllByUser(it!!).forEach {
+        userRepository.findByUsername(username).map {
+            refreshTokenRepository.findAllByUser(it).forEach {
                 it.apply {
                     valid = false
                 }.let {
@@ -165,7 +157,7 @@ open class TestBase {
     }
 
     fun extractRefreshTokenFromCookie(responseEntity: ResponseEntity<String>): String {
-        return responseEntity.headers!!["Set-Cookie"]!![0]
+        return responseEntity.headers["Set-Cookie"]!![0]
     }
 
     fun createUser(jsonStr: String, token: String?): ResponseEntity<String> {
@@ -233,12 +225,35 @@ open class TestBase {
             restTemplate.exchange(location?.toASCIIString() + "/shopping-list/$list_id/entries/" + id, HttpMethod.DELETE, it, Void::class.java)
         }
     }
+
+    fun shareShoppingList(shareRequestJson: String, token: String?): ResponseEntity<Void> {
+        return HttpEntity<String>(shareRequestJson, standardHeaders(token)).let {
+            restTemplate.postForEntity("/share", it, Void::class.java)
+        }
+    }
+
+    fun acceptShoppingList(authToken: String, shareToken: String): ResponseEntity<Void> {
+        return HttpEntity<String>(USER_2.toString(), standardHeaders(authToken)).let {
+            restTemplate.exchange("/share?token=$shareToken", HttpMethod.GET, it, Void::class.java)
+        }
+    }
+
+    fun extractTokenFromMail(message: MimeMessage) =
+            message.content.let {
+                it as String
+            }.replace("\r\n", "")
 }
 
 val USER_1 = Json {
     "username" To "Max"
     "password" To "p4ssw0rd"
-    "email_address" To "test@example.com"
+    "email_address" To "max@example.com"
+}
+
+val USER_2 = Json {
+    "username" To "Moritz"
+    "password" To "p4ssw0rd2"
+    "email_address" To "moritz@example.com"
 }
 
 val ADMIN = Json {

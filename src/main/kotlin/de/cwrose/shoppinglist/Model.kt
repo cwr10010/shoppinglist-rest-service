@@ -7,29 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.util.Date
-import java.util.UUID
-import javax.persistence.CascadeType
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.EnumType
-import javax.persistence.Enumerated
-import javax.persistence.FetchType
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.JoinTable
-import javax.persistence.ManyToMany
-import javax.persistence.ManyToOne
-import javax.persistence.MappedSuperclass
-import javax.persistence.OneToMany
-import javax.persistence.PrePersist
-import javax.persistence.PreUpdate
-import javax.persistence.Table
-import javax.persistence.Temporal
-import javax.persistence.TemporalType
+import java.time.Instant
+import java.util.*
+import javax.persistence.*
 
 
 data class JwtAuthenticationResponse(
+
         @JsonProperty("auth_token")
         val authToken: String? = null,
 
@@ -39,65 +23,59 @@ data class JwtAuthenticationResponse(
         val expires: Number? = null
 )
 
-data class JwtAuthenticationRequest(val username: String, val password: String)
+data class JwtAuthenticationRequest(
+
+        val username: String,
+
+        val password: String
+)
+
+data class ShareInvitation(
+
+        @JsonProperty("user_id")
+        val userId: String,
+
+        @JsonProperty("shopping_list_id")
+        val shoppingListId: String
+)
 
 data class UserShoppingList(
+
         @JsonProperty("shopping_list_id")
         var shoppinglistId: String?,
+
         @JsonProperty("shopping_list_name")
         var shoppinglistName: String?,
+
         @JsonProperty("owners_id")
         var ownersId: String?,
+
         @JsonProperty("owners_name")
         var ownersName: String?
 )
 
-@Entity
-@Table(name = "SHOPPING_LIST_ITEM")
-data class ShoppingListItem(
+@MappedSuperclass
+abstract class EntityBase(
 
-        var name: String? = null,
+        @JsonProperty("id")
+        @Id
+        var id: String? = null,
 
-        var description: String? = null,
+        var created: Instant? = null,
 
-        @Column(name = "item_order")
-        var order: Int? = null,
+        var modified: Instant? = null
+) {
+    @PrePersist
+    fun prePersist() {
+        id = UUID.randomUUID().toString()
+        created = Instant.now()
+    }
 
-        @Column(name = "item_checked")
-        @Type(type = "yes_no")
-        var checked: Boolean = false,
-
-        @JsonProperty("user_id")
-        @Column(name = "user_id")
-        var userId: String? = null,
-
-        @JsonIgnore
-        @ManyToOne(optional = false)
-        var shoppingList: ShoppingList? = null
-) : EntityBase()
-
-@Entity
-@Table(name = "SHOPPING_LIST")
-class ShoppingList(
-
-        var name: String? = null,
-
-        @JsonProperty("owners_user_id")
-        @Column(name = "owners_user_id")
-        var ownersUserId: String? = null,
-
-        @JsonProperty("accessable_for")
-        @OneToMany(fetch = FetchType.LAZY)
-        @JoinTable(
-                name = "ACCESSABLE_FOR_USER_IDS",
-                joinColumns = arrayOf(JoinColumn(name = "SHOPPINGLIST_ID", referencedColumnName = "ID")),
-                inverseJoinColumns = arrayOf(JoinColumn(name = "USER_ID", referencedColumnName = "ID")))
-        var accessableForUserIds: Set<User> = emptySet(),
-
-        @JsonProperty("shopping_list_items")
-        @OneToMany(fetch = FetchType.EAGER, mappedBy = "shoppingList", cascade = arrayOf(CascadeType.ALL))
-        var shoppingListItems: Set<ShoppingListItem> = emptySet()
-) : EntityBase()
+    @PreUpdate
+    fun preUpdate() {
+        modified = Instant.now()
+    }
+}
 
 enum class AuthorityName {
     ROLE_USER, ROLE_ADMIN
@@ -135,8 +113,8 @@ data class User(
         @ManyToMany(fetch = FetchType.EAGER)
         @JoinTable(
                 name = "USER_AUTHORITY",
-                joinColumns = arrayOf(JoinColumn(name = "USER_ID", referencedColumnName = "ID")),
-                inverseJoinColumns = arrayOf(JoinColumn(name = "AUTHORITY_ID", referencedColumnName = "ID")))
+                joinColumns = [JoinColumn(name = "USER_ID", referencedColumnName = "ID")],
+                inverseJoinColumns =[JoinColumn(name = "AUTHORITY_ID", referencedColumnName = "ID")])
         var authorities: Set<Authority> = emptySet()
 
 ) : EntityBase()
@@ -171,37 +149,79 @@ data class RefreshToken(
         @JoinColumn(name = "user_id")
         var user: User? = null,
 
-        @Temporal(TemporalType.TIMESTAMP)
-        var expires: Date? = null,
+        var expires: Instant? = null,
 
         @Type(type = "yes_no")
         var valid: Boolean? = true
 ) : EntityBase()
 
-@MappedSuperclass
-abstract class EntityBase(
+@Entity
+@Table(name = "SHOPPING_LIST_ITEM")
+data class ShoppingListItem(
 
-        @JsonProperty("id")
-        @Id
-        var id: String? = null,
+        var name: String? = null,
 
-        @Temporal(TemporalType.TIMESTAMP)
-        var created: Date? = null,
+        var description: String? = null,
 
-        @Temporal(TemporalType.TIMESTAMP)
-        var modified: Date? = null
-) {
-    @PrePersist
-    fun prePersist() {
-        id = UUID.randomUUID().toString()
-        created = Date()
-    }
+        @Column(name = "item_order")
+        var order: Int? = null,
 
-    @PreUpdate
-    fun preUpdate() {
-        modified = Date()
-    }
-}
+        @Column(name = "item_checked")
+        @Type(type = "yes_no")
+        var checked: Boolean = false,
+
+        @JsonProperty("user_id")
+        @Column(name = "user_id")
+        var userId: String? = null,
+
+        @JsonIgnore
+        @ManyToOne(optional = false)
+        var shoppingList: ShoppingList? = null
+) : EntityBase()
+
+@Entity
+@Table(name = "SHOPPING_LIST")
+class ShoppingList(
+
+        var name: String? = null,
+
+        @JsonProperty("owners_user_id")
+        @Column(name = "owners_user_id")
+        var ownersUserId: String? = null,
+
+        @JsonProperty("accessable_for")
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JoinTable(
+                name = "ACCESSABLE_FOR_USER_IDS",
+
+                joinColumns = [JoinColumn(name = "SHOPPINGLIST_ID", referencedColumnName = "ID")],
+                inverseJoinColumns = [JoinColumn(name = "USER_ID", referencedColumnName = "ID")])
+        var accessableForUser: Set<User> = emptySet(),
+
+        @JsonProperty("shopping_list_items")
+        @OneToMany(fetch = FetchType.LAZY, mappedBy = "shoppingList", cascade = [CascadeType.ALL])
+        var shoppingListItems: Set<ShoppingListItem> = emptySet()
+) : EntityBase()
+
+@Entity
+@Table(name = "SHARED_SHOPPING_LIST")
+data class SharedShoppingList(
+
+        @OneToOne(fetch = FetchType.EAGER)
+        @JoinColumn(name="from_user_id", referencedColumnName="ID")
+        var fromUser: User? = null,
+
+        @OneToOne(fetch = FetchType.EAGER)
+        @JoinColumn(name="for_user_id", referencedColumnName="ID")
+        var forUser: User? = null,
+
+        @OneToOne(fetch = FetchType.EAGER)
+        @JoinColumn(name="shared_list_id", referencedColumnName="ID")
+        var sharedList: ShoppingList? = null,
+
+        @Type(type = "yes_no")
+        var connected: Boolean? = false
+) : EntityBase()
 
 @Repository
 interface ShoppingListItemsRepository : JpaRepository<ShoppingListItem, String>
@@ -209,16 +229,19 @@ interface ShoppingListItemsRepository : JpaRepository<ShoppingListItem, String>
 @Repository
 interface ShoppingListsRepository : JpaRepository<ShoppingList, String> {
 
-    fun findByOwnersUserId(ownersUserId: String): ShoppingList
+    fun findByOwnersUserId(ownersUserId: String): Optional<ShoppingList>
 
     @Query("SELECT sl.* FROM user u, accessable_for_user_ids au, shopping_list sl WHERE u.id=:userId AND au.user_id=u.id AND sl.id=au.shoppinglist_id", nativeQuery = true)
     fun findShoppingListsAuthorizedForUser(@Param("userId") userId: String): List<ShoppingList>
 }
 
 @Repository
+interface SharedShoppingListRepository : JpaRepository<SharedShoppingList, String>
+
+@Repository
 interface UserRepository : JpaRepository<User, String> {
 
-    fun findByUsername(username: String): User?
+    fun findByUsername(username: String): Optional<User>
 }
 
 @Repository
@@ -230,11 +253,12 @@ interface RefreshTokenRepository : JpaRepository<RefreshToken, String> {
 @Repository
 interface RegistrationDataRepository : JpaRepository<RegistrationData, String> {
 
-    fun findByUsername(username: String) : RegistrationData?
+    fun findByUsername(username: String) : Optional<RegistrationData>
 }
 
 @Repository
 interface AuthorityRepository : JpaRepository<Authority, String> {
 
-    fun findByName(name: AuthorityName): Authority?
+    fun findByName(name: AuthorityName): Optional<Authority>
 }
+

@@ -10,7 +10,6 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.junit4.SpringRunner
 import org.subethamail.wiser.Wiser
-import javax.mail.internet.MimeMessage
 import kotlin.test.assertEquals
 
 
@@ -48,13 +47,7 @@ class RegistrationResourceTest : TestBase() {
             restTemplate.getForEntity("/register?token=$token", UserVO::class.java)
         }.let {
             assertEquals(HttpStatus.OK, it.statusCode)
-            assertEquals("Max", it.body.username)
+            assertEquals("Max", it.body?.username)
         }
-
     }
 }
-
-internal fun extractTokenFromMail(message: MimeMessage) =
-        message.content.let {
-            it as String
-        }.replace("\r\n", "")

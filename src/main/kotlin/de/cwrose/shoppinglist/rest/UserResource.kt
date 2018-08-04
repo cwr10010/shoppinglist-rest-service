@@ -1,17 +1,14 @@
 package de.cwrose.shoppinglist.rest
 
-import de.cwrose.shoppinglist.AuthorityName
-import de.cwrose.shoppinglist.AuthorityRepository
 import de.cwrose.shoppinglist.RefreshTokenRepository
-import de.cwrose.shoppinglist.ShoppingList
 import de.cwrose.shoppinglist.ShoppingListsRepository
 import de.cwrose.shoppinglist.User
 import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.services.UserService
 import mu.KLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -33,13 +30,14 @@ class UserResource(
 
     @PostMapping
     fun index(@RequestBody user: User, uriComponentsBuilder: UriComponentsBuilder): ResponseEntity<Void> =
-            when (userRepository.findByUsername(user.username!!)) {
-                null -> userService.createUser(user).let {
-                    uriComponentsBuilder.path("/users/{id}").buildAndExpand(user.id).let {
-                        ResponseEntity.created(it.toUri())
+            userRepository.findByUsername(user.username!!).map {
+                ResponseEntity.ok()
+            }.orElseGet {
+                userService.createUser(user).let {
+                    uriComponentsBuilder.path("/users/{id}").buildAndExpand(user.id).let {uriComponents ->
+                        ResponseEntity.created(uriComponents.toUri())
                     }
                 }
-                else -> ResponseEntity.ok()
             }.build()
 
     @GetMapping("{user_id}")
@@ -59,60 +57,21 @@ class UserResource(
 
     @DeleteMapping("{user_id}")
     fun delete(@PathVariable("user_id") user_id: String) =
-            userRepository.findOne(user_id).let { user ->
-                when (user) {
-                    null -> logger.warn("Unknown user $user_id")
-                    else -> refreshTokenRepository.findAllByUser(user).let { tokens ->
-                        logger.info("Deleting $user_id")
-                        refreshTokenRepository.delete(tokens)
-                    }.let {
-                        shoppingListsRepository.findByOwnersUserId(user_id).let {
-                            shoppingListsRepository.delete(it)
-                        }.let {
-                            userRepository.delete(user)
-                        }
+            userRepository.findById(user_id).map { user ->
+                refreshTokenRepository.findAllByUser(user).let { tokens ->
+                    logger.info("Deleting $user_id")
+                    refreshTokenRepository.deleteAll(tokens)
+                } .let {
+                    shoppingListsRepository.findByOwnersUserId(user_id).map { shoppingListToDelete ->
+                        shoppingListsRepository.delete(shoppingListToDelete)
                     }
+                } .let {
+                    userRepository.delete(user)
                 }
+            } .orElseGet {
+                logger.warn("Unknown user $user_id")
             }
 
     companion object : KLogging()
 }
 
-@Service
-class UserService(
-        val userRepository: UserRepository,
-        val authorityRepository: AuthorityRepository,
-        val shoppingListsRepository: ShoppingListsRepository,
-        val passwordEncoder: PasswordEncoder) {
-
-    fun createUser(user: User) =
-            user.apply {
-                passwordHash = when {
-                    user.password != null -> passwordEncoder.encode(user.password)
-                    else -> user.passwordHash
-                }
-                authorities = when {
-                    user.authorities.isEmpty() -> setOf(defaultAuthority())
-                    else -> user.authorities
-                }
-                active = true
-            }.let {
-                userRepository.save(user).let { user ->
-                    logger.info("Added user ${user.id}")
-                    shoppingListsRepository.save(
-                            ShoppingList().apply {
-                                name = "Shopping List"
-                                ownersUserId = user.id
-                                accessableForUserIds += user
-                            }).let {
-                        logger.info("Added default shoppinglist ${it.id}")
-                    }
-                    user
-                }
-            }!!
-
-    fun defaultAuthority() = authorityRepository.findByName(AuthorityName.ROLE_USER)!!
-
-    companion object : KLogging()
-
-}
