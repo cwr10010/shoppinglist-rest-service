@@ -27,14 +27,14 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
     @Value("\${refresh.cookie.path}")
     var refreshCookiePath: String = "/"
 
-    fun generateAuthToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
+    fun generateAuthToken(user: JwtUser, issueDate: Date = Date()): String = Jwts.builder()
             .setSubject(user.username)
             .setIssuedAt(issueDate)
             .setExpiration(Date(issueDate.time + EXPIRATION * 1000L))
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    fun generateRefreshToken(refreshId: String, issueDate: Date = Date()) = Jwts.builder()
+    fun generateRefreshToken(refreshId: String, issueDate: Date = Date()): String = Jwts.builder()
             .setClaims(hashMapOf("refresh_id" to refreshId as Any))
             .setSubject("RefreshToken")
             .setIssuedAt(issueDate)
@@ -42,7 +42,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    fun generateIDToken(user: JwtUser, issueDate: Date = Date()) = Jwts.builder()
+    fun generateIDToken(user: JwtUser, issueDate: Date = Date()): String = Jwts.builder()
             .setClaims(hashMapOf("id" to user.id as Any))
             .setSubject("IdToken")
             .setIssuedAt(issueDate)
@@ -50,7 +50,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    fun generateRegistrationToken(username: String, issueDate: Date = Date()) = Jwts.builder()
+    fun generateRegistrationToken(username: String, issueDate: Date = Date()): String = Jwts.builder()
             .setClaims(hashMapOf("username" to username as Any))
             .setSubject("RegistrationToken")
             .setIssuedAt(issueDate)
@@ -58,7 +58,7 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    fun generateShareToken(sharedListId: String, issueDate: Date = Date()) = Jwts.builder()
+    fun generateShareToken(sharedListId: String, issueDate: Date = Date()): String = Jwts.builder()
             .setClaims(hashMapOf(
                     "shared_list_id" to sharedListId as Any
             ))
@@ -68,33 +68,34 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
             .signWith(SignatureAlgorithm.HS512, secret)
             .compact()
 
-    fun updateRefreshToken(token: String, issueDate: Date = Date()) =
+    fun updateRefreshToken(token: String, issueDate: Date = Date()): String =
             getAllClaimsFromToken(token).apply {
                 issuedAt = issueDate
             }.let(this::doUpdateToken)
 
-    fun validateToken(token: String, userDetails: UserDetails) =
+    fun validateToken(token: String, userDetails: UserDetails): Boolean =
             getUsernameFromToken(token).let {
                 userDetails.username == it
             }
 
-    fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
+    fun getUsernameFromToken(token: String): String = getAllClaimsFromToken(token).subject
 
-    fun getRefreshTokenId(refreshToken: String) = getAllClaimsFromToken(refreshToken)["refresh_id"] as String
+    fun getRefreshTokenId(refreshToken: String): String = getAllClaimsFromToken(refreshToken)["refresh_id"] as String
 
-    fun getRegistrationTokenUser(registrationToken: String) = getAllClaimsFromToken(registrationToken)["username"] as String
+    fun getRegistrationTokenUser(registrationToken: String): String = getAllClaimsFromToken(registrationToken)["username"] as String
 
-    fun getSharedListId(sharedListToken: String) = getAllClaimsFromToken(sharedListToken)["shared_list_id"] as String
+    fun getSharedListId(sharedListToken: String): String = getAllClaimsFromToken(sharedListToken)["shared_list_id"] as String
 
-    fun createRefreshToken(user: User) = refreshTokenRepository.save(RefreshToken(user, Instant.now().plusSeconds(REFRESH_EXPIRATION.toLong())))
-             .let {
-                generateRefreshToken(it.id!!)
-            }
+    fun createRefreshToken(user: User): String = generateRefreshToken(
+            refreshTokenRepository.save(
+                    RefreshToken(user, Instant.now().plusSeconds(REFRESH_EXPIRATION.toLong())
+                    )
+            ).id!!)
 
-    fun findValidToken(token: String) =
-            getRefreshTokenId(token).let {
-                refreshTokenRepository.findById(it).filter {
-                    it.valid!!
+    fun findValidToken(token: String): Optional<RefreshToken> =
+            getRefreshTokenId(token).let {requestedTokenId ->
+                refreshTokenRepository.findById(requestedTokenId).filter { refreshToken ->
+                    refreshToken.valid!!
                 }
             }
 
@@ -103,11 +104,11 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
                 null -> createRefreshToken(user)
                 else -> {
                     getRefreshTokenId(token).let {
-                        refreshTokenRepository.findById(it).ifPresent {
-                            it.apply {
+                        refreshTokenRepository.findById(it).ifPresent { refreshToken ->
+                            refreshToken.apply {
                                 expires = Instant.now().plusSeconds(REFRESH_EXPIRATION.toLong())
-                            }.let {
-                                refreshTokenRepository.save(it)
+                            }.let { thisToken ->
+                                refreshTokenRepository.save(thisToken)
                             }
                         }
                     }
@@ -148,8 +149,8 @@ class JwtService(val refreshTokenRepository: RefreshTokenRepository) {
                     TOKEN_EXPIRATION)
 
     companion object {
-        private val EXPIRATION = 1000L
-        private val REFRESH_EXPIRATION = 31 * 24 * 60 * 60
-        val TOKEN_EXPIRATION = 60 * 60 * 24
+        private const val EXPIRATION = 1000L
+        private const val REFRESH_EXPIRATION = 31 * 24 * 60 * 60
+        const val TOKEN_EXPIRATION = 60 * 60 * 24
     }
 }

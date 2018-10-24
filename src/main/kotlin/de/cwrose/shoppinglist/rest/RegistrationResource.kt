@@ -29,18 +29,18 @@ class RegistrationResource(
         val jwtService: JwtService) {
 
     @PostMapping
-    fun register(@RequestBody registrationData: RegistrationData) =
+    fun register(@RequestBody registrationData: RegistrationData): ResponseEntity<Void> =
             registrationData.apply {
                 username = username?.trim()
             } .let {
-                userRepository.findByUsername(registrationData.username!!).map {
+                userRepository.findByUsername(registrationData.username!!).map { _ ->
                     logger.info("User already exists. Ignore registration attempt")
                 }.orElseGet {
                     registrationData.apply {
                         registrationToken = jwtService.generateRegistrationToken(username!!)
                         passwordHash = passwordEncoder.encode(password)
                     }.let { enrichedRegistrationData ->
-                        registrationDataRepository.findByUsername(enrichedRegistrationData.username!!).map {
+                        registrationDataRepository.findByUsername(enrichedRegistrationData.username!!).map { _ ->
                             logger.info("Name already reserved. Don't save registration data.")
                         } .orElseGet {
                             registrationDataRepository.save(enrichedRegistrationData).let { updatedData ->
@@ -55,11 +55,11 @@ class RegistrationResource(
             }
 
     @GetMapping
-    fun activate(@RequestParam("token", required = true) token: String) =
+    fun activate(@RequestParam("token", required = true) token: String): User =
             token.let {
                 jwtService.getRegistrationTokenUser(it).let { registeredUserName ->
-                    registrationDataRepository.findByUsername(registeredUserName).filter {
-                        it.registrationToken == token && ! userRepository.findByUsername(it.username!!).isPresent
+                    registrationDataRepository.findByUsername(registeredUserName).filter { registrationData ->
+                        registrationData.registrationToken == token && ! userRepository.findByUsername(registrationData.username!!).isPresent
                     } .map { registrationData ->
                         userService.createUser(
                                 User().apply {

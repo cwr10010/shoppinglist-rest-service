@@ -1,11 +1,6 @@
 package de.cwrose.shoppinglist.services
 
-import de.cwrose.shoppinglist.AuthorityName
-import de.cwrose.shoppinglist.AuthorityRepository
-import de.cwrose.shoppinglist.ShoppingList
-import de.cwrose.shoppinglist.ShoppingListsRepository
-import de.cwrose.shoppinglist.User
-import de.cwrose.shoppinglist.UserRepository
+import de.cwrose.shoppinglist.*
 import mu.KLogging
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -17,7 +12,7 @@ class UserService(
         val shoppingListsRepository: ShoppingListsRepository,
         val passwordEncoder: PasswordEncoder) {
 
-    fun createUser(user: User) =
+    fun createUser(user: User): User =
             user.apply {
                 passwordHash = when {
                     user.password != null -> passwordEncoder.encode(user.password)
@@ -36,14 +31,14 @@ class UserService(
                                 name = "Shopping List"
                                 ownersUserId = savedUser.id
                                 accessableForUser += savedUser
-                            }).let {
+                            }).let { _ ->
                         logger.info("Added default shoppinglist ${savedUser.id}")
                     }
                     savedUser
                 }
             }
 
-    fun defaultAuthority() = authorityRepository.findByName(AuthorityName.ROLE_USER).orElseThrow {
+    fun defaultAuthority(): Authority = authorityRepository.findByName(AuthorityName.ROLE_USER).orElseThrow {
         IllegalStateException("ROLE_USER is unknown. System setup completed?")
     }
 

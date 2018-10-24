@@ -1,4 +1,4 @@
-FROM openjdk:10-slim
+FROM openjdk:11-slim
 
 ENV HOME=/app
 ENV APP_HOME=$HOME

@@ -55,7 +55,7 @@ class ShareListResource(
 
 
     @GetMapping
-    fun acceptInvitation(@RequestParam("token", required = true) token: String) =
+    fun acceptInvitation(@RequestParam("token", required = true) token: String): Unit =
             jwtService.getSharedListId(token).let { sharedListId ->
                 sharedShoppingListRepository.findById(sharedListId).let { sharedList ->
                     sharedList.map { thisSharedList ->

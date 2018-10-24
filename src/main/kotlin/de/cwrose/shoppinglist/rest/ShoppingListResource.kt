@@ -26,7 +26,7 @@ class ShoppingListResource(
         val shoppingListItems: ShoppingListItemsRepository) {
 
     @GetMapping
-    fun list(@PathVariable("user_id") user_id: String) =
+    fun list(@PathVariable("user_id") user_id: String): List<UserShoppingList> =
             shoppingLists.findShoppingListsAuthorizedForUser(user_id).let { authorizedShoppingLists ->
                 userRepository.findById(user_id).let { foundUser ->
                     foundUser.map { user ->
@@ -50,8 +50,8 @@ class ShoppingListResource(
                     null -> it
                     else -> {
                         logger.info("Filter shopping list for user $user_id with term $term")
-                        it.filter {
-                            it.name!!.contains(term, true)
+                        it.filter {shoppingListItem ->
+                            shoppingListItem.name!!.contains(term, true)
                         }
                     }
                 }
@@ -68,10 +68,10 @@ class ShoppingListResource(
                     item.userId = user_id
                     item.shoppingList = shoppingList
                     shoppingListItems.save(item)
-                } .let {
-                    logger.debug("Items to be added: $it")
-                    shoppingList.shoppingListItems += it
-                    logger.info("Added List of ShoppingListItems ${it.map { it.id }} to User $user_id")
+                } .let { shoppingListItemSet ->
+                    logger.debug("Items to be added: $shoppingListItemSet")
+                    shoppingList.shoppingListItems += shoppingListItemSet
+                    logger.info("Added List of ShoppingListItems ${shoppingListItemSet.map { it.id }} to User $user_id")
                     shoppingLists.save(shoppingList)
                 }.shoppingListItems.sortedBy { it.order }
             }
@@ -80,14 +80,14 @@ class ShoppingListResource(
     fun entry(
             @PathVariable("user_id") user_id: String,
             @PathVariable("shopping-list_id") shoppingListId: String,
-            @PathVariable("id") id: String) = shoppingListItem(user_id, shoppingListId, id)
+            @PathVariable("id") id: String): ShoppingListItem = shoppingListItem(user_id, shoppingListId, id)
 
     @PostMapping("{shopping-list_id}/entries/{id}")
     fun entry(
             @PathVariable("user_id") user_id: String,
             @PathVariable("shopping-list_id") shoppingListId: String,
             @PathVariable("id") id: String,
-            @RequestBody shoppingListItem: ShoppingListItem) =
+            @RequestBody shoppingListItem: ShoppingListItem): ShoppingListItem =
             shoppingListItem(user_id, shoppingListId, id).apply {
                 name = shoppingListItem.name
                 description = shoppingListItem.description

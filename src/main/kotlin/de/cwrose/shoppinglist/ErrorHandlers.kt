@@ -19,7 +19,7 @@ import kotlin.NoSuchElementException
 import kotlin.String
 
 @ControllerAdvice
-class ExceptionHandlers() {
+class ExceptionHandlers {
 
     @ExceptionHandler(EntityNotFoundException::class, NoSuchElementException::class, EmptyResultDataAccessException::class, IllegalArgumentException::class)
     fun resourceNotFoundException(exception: RuntimeException, locale: Locale) = notFound("RESOURCE NOT FOUND")

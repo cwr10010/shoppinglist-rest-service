@@ -41,10 +41,10 @@ class UserResource(
             }.build()
 
     @GetMapping("{user_id}")
-    fun entry(@PathVariable("user_id") user_id: String) = userRepository.getOne(user_id)
+    fun entry(@PathVariable("user_id") user_id: String):User = userRepository.getOne(user_id)
 
     @PostMapping("{user_id}")
-    fun entry(@PathVariable("user_id") user_id: String, @RequestBody user: User) =
+    fun entry(@PathVariable("user_id") user_id: String, @RequestBody user: User):User =
             userRepository.getOne(user_id).apply {
                 username = user.username
                 passwordHash = passwordEncoder.encode(user.password)
@@ -56,7 +56,7 @@ class UserResource(
             }
 
     @DeleteMapping("{user_id}")
-    fun delete(@PathVariable("user_id") user_id: String) =
+    fun delete(@PathVariable("user_id") user_id: String): Unit =
             userRepository.findById(user_id).map { user ->
                 refreshTokenRepository.findAllByUser(user).let { tokens ->
                     logger.info("Deleting $user_id")

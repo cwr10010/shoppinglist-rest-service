@@ -41,27 +41,31 @@ import javax.servlet.http.HttpServletResponse
 class JwtAuthenticationTokenFilter(private val userRepository: UserRepository, private val userDetailsService: UserDetailsService, private val jwtService: JwtService) : OncePerRequestFilter() {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) =
-            request.getHeader("Authorization").let { token ->
-                if (token != null && token.startsWith("Bearer ")) {
-                    token.substring(7).let { authToken ->
-                        try {
-                            jwtService.getUsernameFromToken(authToken)
-                        } catch (ex: JwtException) {
-                            logger.warn("Token invalid")
-                            null
-                        }.let { username ->
-                            when (username) {
-                                null -> logger.warn("No username in authorization token")
-                                else -> when (SecurityContextHolder.getContext()) {
-                                    null -> logger.warn("Security context empty")
-                                    else -> {
-                                        updateAuthentication(request, username, authToken)
+            request.getHeader("Authorization").let { token: String? ->
+                when (token) {
+                    null -> logger.info("No authentication provided")
+                    else -> if (token.startsWith("Bearer ")) {
+                        token.substring(7).let { authToken ->
+                            try {
+                                jwtService.getUsernameFromToken(authToken)
+                            } catch (ex: JwtException) {
+                                logger.warn("Token invalid")
+                                null
+                            }.let { username ->
+                                when (username) {
+                                    null -> logger.warn("No username in authorization token")
+                                    else -> when (SecurityContextHolder.getContext()) {
+                                        null -> logger.warn("Security context empty")
+                                        else -> {
+                                            updateAuthentication(request, username, authToken)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+
             }.let {
                 filterChain.doFilter(request, response)
             }
@@ -137,7 +141,7 @@ class JwtMvcConfig : WebMvcConfigurer {
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: UserDetailsService, val userRepository: UserRepository, val jwtService: JwtService) : WebSecurityConfigurerAdapter() {
+class JwtWebSecurityConfig(val jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint, val userDetailsService: JwtUserDetailsService, val userRepository: UserRepository, val jwtService: JwtService) : WebSecurityConfigurerAdapter() {
 
     @Autowired
     fun configureAuthentication(authenticationManagerBuilder: AuthenticationManagerBuilder, passwordEncoder: PasswordEncoder) {

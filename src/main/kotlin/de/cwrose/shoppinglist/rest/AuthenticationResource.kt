@@ -1,6 +1,7 @@
 package de.cwrose.shoppinglist.rest
 
 import de.cwrose.shoppinglist.JwtAuthenticationRequest
+import de.cwrose.shoppinglist.JwtAuthenticationResponse
 import de.cwrose.shoppinglist.UserRepository
 import de.cwrose.shoppinglist.auth.JwtUser
 import de.cwrose.shoppinglist.auth.JwtUserDetailsService
@@ -23,23 +24,23 @@ class AuthenticationResource(
         val jwtService: JwtService) {
 
     @PostMapping
-    fun createAuthToken(@RequestBody authenticationRequest: JwtAuthenticationRequest, response: HttpServletResponse) =
+    fun createAuthToken(@RequestBody authenticationRequest: JwtAuthenticationRequest, response: HttpServletResponse): ResponseEntity<JwtAuthenticationResponse> =
             UsernamePasswordAuthenticationToken(authenticationRequest.username, authenticationRequest.password).let {
-                authenticationManager.authenticate(it).let {
-                    SecurityContextHolder.getContext().authentication = it
-                }.let {
-                    authenticate(response, authenticationRequest.username).let {
-                        ResponseEntity.ok(it)
+                authenticationManager.authenticate(it).let { authentication ->
+                    SecurityContextHolder.getContext().authentication = authentication
+                }.let { _ ->
+                    authenticate(response, authenticationRequest.username).let { jwtAuthResponse ->
+                        ResponseEntity.ok(jwtAuthResponse)
                     }
                 }
             }
 
     @GetMapping
-    fun refreshAuthToken(response: HttpServletResponse, @CookieValue("RefreshCookie") refreshCookie: Cookie) =
+    fun refreshAuthToken(response: HttpServletResponse, @CookieValue("RefreshCookie") refreshCookie: Cookie): ResponseEntity<JwtAuthenticationResponse> =
             refreshCookie.value.let { refreshToken ->
                 jwtService.findValidToken(refreshToken).map {
-                    authenticate(response, it.user!!.username!!, refreshToken).let {
-                        ResponseEntity.ok(it)
+                    authenticate(response, it.user!!.username!!, refreshToken).let {jwtAuthenticationResponse ->
+                        ResponseEntity.ok(jwtAuthenticationResponse)
                     }
                 } .orElseThrow {
                     BadCredentialsException("Invalid Refresh Token")
@@ -49,7 +50,7 @@ class AuthenticationResource(
     @GetMapping("logout")
     fun logout(response: HttpServletResponse) = response.addCookie(jwtService.emptyRefreshCookie())
 
-    fun authenticate(response: HttpServletResponse, username: String, token: String? = null) =
+    fun authenticate(response: HttpServletResponse, username: String, token: String? = null): JwtAuthenticationResponse =
             userRepository.findByUsername(username).map { user ->
                 jwtService.createOrUpdateRefreshCookie(user, token).let  {
                     cookie -> response.addCookie(cookie)
