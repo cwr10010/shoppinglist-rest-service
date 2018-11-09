@@ -231,6 +231,8 @@ interface ShoppingListsRepository : JpaRepository<ShoppingList, String> {
 
     fun findByOwnersUserId(ownersUserId: String): Optional<ShoppingList>
 
+    fun findByOwnersUserIdAndId(ownersUserId: String, id: String?): Optional<ShoppingList>
+
     @Query("SELECT sl.* FROM user u, accessable_for_user_ids au, shopping_list sl WHERE u.id=:userId AND au.user_id=u.id AND sl.id=au.shoppinglist_id", nativeQuery = true)
     fun findShoppingListsAuthorizedForUser(@Param("userId") userId: String): List<ShoppingList>
 }

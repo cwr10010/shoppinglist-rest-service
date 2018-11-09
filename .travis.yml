@@ -1,7 +1,7 @@
 dist: trusty
 language: java
 jdk:
-  - openjdk8
+  - openjdk11
 jobs:
   include:
     - stage: test
@@ -11,10 +11,6 @@ jobs:
       - COMMIT=${TRAVIS_COMMIT::8}
       services:
         - docker
-      addons:
-        apt:
-          packages:
-            - oracle-java8-installer
       after_success:
         - ./gradlew jacocoTestReport coveralls
         - docker login -u $DOCKER_USER -p $DOCKER_PASS

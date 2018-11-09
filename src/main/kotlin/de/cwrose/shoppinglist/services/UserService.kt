@@ -31,7 +31,7 @@ class UserService(
                                 name = "Shopping List"
                                 ownersUserId = savedUser.id
                                 accessableForUser += savedUser
-                            }).let { _ ->
+                            }).let {
                         logger.info("Added default shoppinglist ${savedUser.id}")
                     }
                     savedUser

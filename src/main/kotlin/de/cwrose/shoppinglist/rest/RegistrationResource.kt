@@ -33,14 +33,14 @@ class RegistrationResource(
             registrationData.apply {
                 username = username?.trim()
             } .let {
-                userRepository.findByUsername(registrationData.username!!).map { _ ->
+                userRepository.findByUsername(registrationData.username!!).map {
                     logger.info("User already exists. Ignore registration attempt")
                 }.orElseGet {
                     registrationData.apply {
                         registrationToken = jwtService.generateRegistrationToken(username!!)
                         passwordHash = passwordEncoder.encode(password)
                     }.let { enrichedRegistrationData ->
-                        registrationDataRepository.findByUsername(enrichedRegistrationData.username!!).map { _ ->
+                        registrationDataRepository.findByUsername(enrichedRegistrationData.username!!).map {
                             logger.info("Name already reserved. Don't save registration data.")
                         } .orElseGet {
                             registrationDataRepository.save(enrichedRegistrationData).let { updatedData ->

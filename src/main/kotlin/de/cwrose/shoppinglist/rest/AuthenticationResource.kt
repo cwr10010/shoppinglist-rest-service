@@ -28,7 +28,7 @@ class AuthenticationResource(
             UsernamePasswordAuthenticationToken(authenticationRequest.username, authenticationRequest.password).let {
                 authenticationManager.authenticate(it).let { authentication ->
                     SecurityContextHolder.getContext().authentication = authentication
-                }.let { _ ->
+                }.let {
                     authenticate(response, authenticationRequest.username).let { jwtAuthResponse ->
                         ResponseEntity.ok(jwtAuthResponse)
                     }

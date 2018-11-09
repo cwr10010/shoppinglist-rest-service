@@ -32,7 +32,7 @@ class ShareListResource(
                     currentUser.map { fromUser ->
                         userRepository.findById(shareInvitation.userId).let { foundForUser ->
                             foundForUser.map { forUser ->
-                                shoppingListsRepository.findById(shareInvitation.shoppingListId).let { foundSharedShoppingList ->
+                                shoppingListsRepository.findByOwnersUserIdAndId(fromUser.id!!, shareInvitation.shoppingListId).let { foundSharedShoppingList ->
                                     foundSharedShoppingList.map { sharedShoppingList ->
                                         sharedShoppingListRepository.save(SharedShoppingList(fromUser, forUser, sharedShoppingList)).let { sharedList ->
                                             jwtService.generateShareToken(sharedList.id!!).let { token ->
@@ -40,7 +40,7 @@ class ShareListResource(
                                             }
                                         }
                                     }.orElseThrow {
-                                        UnknownShoppingListException("Unknow ShoppinList [${shareInvitation.shoppingListId}]for sharing request.")
+                                        UnknownShoppingListException("Unknow ShoppinList [${shareInvitation.shoppingListId}] for sharing request.")
                                     }
                                 }
                             } .orElseThrow {
