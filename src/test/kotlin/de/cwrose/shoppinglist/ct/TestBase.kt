@@ -105,7 +105,7 @@ open class TestBase {
     }
 
     fun authenticate(user: Json = ADMIN): ResponseEntity<String> {
-        return HttpEntity<String>(user.toString(), standardHeaders("")).let {
+        return HttpEntity(user.toString(), standardHeaders("")).let {
             restTemplate.postForEntity("/auth", it, String::class.java)
         }
     }
@@ -145,12 +145,12 @@ open class TestBase {
     }
 
     fun invalidateAllRefreshToken(username: String = ADMIN.json["username"] as String) {
-        userRepository.findByUsername(username).map {
-            refreshTokenRepository.findAllByUser(it).forEach {
-                it.apply {
+        userRepository.findByUsername(username).map {user ->
+            refreshTokenRepository.findAllByUser(user).forEach { refreshToken ->
+                refreshToken.apply {
                     valid = false
-                }.let {
-                    refreshTokenRepository.save(it)
+                }.let { invalidatedRefreshToken ->
+                    refreshTokenRepository.save(invalidatedRefreshToken)
                 }
             }
         }
@@ -161,7 +161,7 @@ open class TestBase {
     }
 
     fun createUser(jsonStr: String, token: String?): ResponseEntity<String> {
-        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+        return HttpEntity(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity("/users", it, String::class.java)
         }
     }
@@ -173,7 +173,7 @@ open class TestBase {
     }
 
     fun updateUser(location: URI?, jsonStr: String, token: String?): ResponseEntity<UserVO> {
-        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+        return HttpEntity(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location, it, UserVO::class.java)
         }
     }
@@ -203,7 +203,7 @@ open class TestBase {
     }
 
     fun addShoppingListEntry(location: URI?, list_id: String?, jsonStr: String, token: String?): ResponseEntity<String> {
-        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+        return HttpEntity(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list/$list_id/entries", it, String::class.java)
         }
     }
@@ -215,7 +215,7 @@ open class TestBase {
     }
 
     fun updateShoppingListEntry(location: URI?, list_id: String?, id: String, jsonStr: String, token: String?): ResponseEntity<ShoppingListEntryVO> {
-        return HttpEntity<String>(jsonStr, standardHeaders(token)).let {
+        return HttpEntity(jsonStr, standardHeaders(token)).let {
             restTemplate.postForEntity(location?.toASCIIString() + "/shopping-list/$list_id/entries/" + id, it, ShoppingListEntryVO::class.java)
         }
     }
@@ -227,13 +227,13 @@ open class TestBase {
     }
 
     fun shareShoppingList(shareRequestJson: String, token: String?): ResponseEntity<Void> {
-        return HttpEntity<String>(shareRequestJson, standardHeaders(token)).let {
+        return HttpEntity(shareRequestJson, standardHeaders(token)).let {
             restTemplate.postForEntity("/share", it, Void::class.java)
         }
     }
 
     fun acceptShoppingList(authToken: String, shareToken: String): ResponseEntity<Void> {
-        return HttpEntity<String>(USER_2.toString(), standardHeaders(authToken)).let {
+        return HttpEntity(USER_2.toString(), standardHeaders(authToken)).let {
             restTemplate.exchange("/share?token=$shareToken", HttpMethod.GET, it, Void::class.java)
         }
     }
@@ -245,20 +245,20 @@ open class TestBase {
 }
 
 val USER_1 = Json {
-    "username" To "Max"
-    "password" To "p4ssw0rd"
-    "email_address" To "max@example.com"
+    "username" to "Max"
+    "password" to "p4ssw0rd"
+    "email_address" to "max@example.com"
 }
 
 val USER_2 = Json {
-    "username" To "Moritz"
-    "password" To "p4ssw0rd2"
-    "email_address" To "moritz@example.com"
+    "username" to "Moritz"
+    "password" to "p4ssw0rd2"
+    "email_address" to "moritz@example.com"
 }
 
 val ADMIN = Json {
-    "username" To "Admin"
-    "password" To "passwd"
+    "username" to "Admin"
+    "password" to "passwd"
 }
 
 class Json() {
@@ -269,8 +269,8 @@ class Json() {
         this.init()
     }
 
-    infix fun <T> String.To(value: T) {
-        json.put(this, value)
+    infix fun <T> String.to(value: T) {
+        json[this] = value
     }
 
     override fun toString(): String = json.toString()

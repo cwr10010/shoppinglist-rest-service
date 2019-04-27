@@ -13,7 +13,7 @@ import kotlin.test.assertEquals
 
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [Application::class])
 class UserResourceCRUDTest : TestBase() {
 
     var location: URI? = null
@@ -37,9 +37,7 @@ class UserResourceCRUDTest : TestBase() {
     @Test
     fun testCreateUser() {
         // user is created on setup()
-        readUser(location, token).let {
-            assertEquals(HttpStatus.OK, it.statusCode)
-        }
+        assertEquals(HttpStatus.OK, readUser(location, token).statusCode)
     }
 
     @Test
@@ -54,9 +52,9 @@ class UserResourceCRUDTest : TestBase() {
     @Test
     fun testUpdateUser() {
         Json {
-            "username" To "Mini"
-            "password" To "p4ssw0rd2"
-            "shopping_list" To emptyList<Json>()
+            "username" to "Mini"
+            "password" to "p4ssw0rd2"
+            "shopping_list" to emptyList<Json>()
         }.let { user ->
             updateUser(location, user.toString(), token).let {
                 assertEquals(HttpStatus.OK, it.statusCode)
@@ -67,31 +65,23 @@ class UserResourceCRUDTest : TestBase() {
 
     @Test
     fun testIgnoreCreateUserIfExists() {
-        readUser(location, token).let {
-            assertEquals(HttpStatus.OK, it.statusCode)
-        }
+        assertEquals(HttpStatus.OK, readUser(location, token).statusCode)
 
-        createUser(USER_1.toString(), token).let {
-            assertEquals(HttpStatus.OK, it.statusCode)
-        }
+        assertEquals(HttpStatus.OK, createUser(USER_1.toString(), token).statusCode)
     }
 
     @Test
     fun testDeleteUser() {
         deleteUser(location, token)
 
-        readUser(location, token).let {
-            assertEquals(HttpStatus.NOT_FOUND, it.statusCode)
-        }
+        assertEquals(HttpStatus.NOT_FOUND, readUser(location, token).statusCode)
     }
 
     @After
     override fun destroy() {
         deleteUser(location, token)
 
-        readUser(location, token).let {
-            assertEquals(HttpStatus.NOT_FOUND, it.statusCode)
-        }
+        assertEquals(HttpStatus.NOT_FOUND, readUser(location, token).statusCode)
         super.destroy()
     }
 }

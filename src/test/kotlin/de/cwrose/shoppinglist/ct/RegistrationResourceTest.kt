@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [Application::class])
 class RegistrationResourceTest : TestBase() {
 
     var wiser: Wiser = Wiser()
@@ -35,19 +35,19 @@ class RegistrationResourceTest : TestBase() {
     @Test
     fun testSendRegistrationLink() {
         val user = USER_1.json
-        HttpEntity<String>(user.toString(), standardHeaders("")).let {
-            restTemplate.postForEntity("/register", it, String::class.java)
-        } .let {
-            assertEquals(HttpStatus.OK, it.statusCode)
+        HttpEntity(user.toString(), standardHeaders("")).let { registrationRequest ->
+            restTemplate.postForEntity("/register", registrationRequest, String::class.java)
+        } .let { registrationResponse ->
+            assertEquals(HttpStatus.OK, registrationResponse.statusCode)
         }
         val token = extractTokenFromMail(wiser.messages.first().mimeMessage)
 
 
-        HttpEntity<String>(user.toString(), standardHeaders("")).let {
+        HttpEntity(user.toString(), standardHeaders("")).let {
             restTemplate.getForEntity("/register?token=$token", UserVO::class.java)
-        }.let {
-            assertEquals(HttpStatus.OK, it.statusCode)
-            assertEquals("Max", it.body?.username)
+        }.let { commitRegistrationResponse ->
+            assertEquals(HttpStatus.OK, commitRegistrationResponse.statusCode)
+            assertEquals("Max", commitRegistrationResponse.body?.username)
         }
     }
 }

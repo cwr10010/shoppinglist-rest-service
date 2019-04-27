@@ -18,7 +18,7 @@ import java.util.*
 import kotlin.test.assertEquals
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = arrayOf(Application::class))
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [Application::class])
 class AuthenticationResourceTest : TestBase() {
 
     @Autowired
@@ -26,9 +26,7 @@ class AuthenticationResourceTest : TestBase() {
 
     @Test
     fun testAuthenticateOk() {
-        authenticate().let {
-            validAuthResponse(it)
-        }
+        validAuthResponse(authenticate())
     }
 
     @Test
@@ -36,30 +34,18 @@ class AuthenticationResourceTest : TestBase() {
         authenticate().let {
             assertEquals(HttpStatus.OK, it.statusCode)
 
-            extractRefreshTokenFromCookie(it).let { refreshCookieToken ->
-                refresh(refreshCookieToken).let { refresh ->
-                    validAuthResponse(refresh)
-                }
-            }
+            validAuthResponse(refresh(extractRefreshTokenFromCookie(it)))
         }
     }
 
     @Test
     fun testAuthTokenInvalid() {
-        authenticate().let {
-            createUser(USER_1.toString(), "Bearer abcdefg").let {
-                assertEquals(HttpStatus.FORBIDDEN, it.statusCode)
-            }
-        }
+        assertEquals(HttpStatus.FORBIDDEN, createUser(USER_1.toString(), "Bearer abcdefg").statusCode)
     }
 
     @Test
     fun testAuthTokenEmpty() {
-        authenticate().let {
-            createUser(USER_1.toString(), "").let {
-                assertEquals(HttpStatus.FORBIDDEN, it.statusCode)
-            }
-        }
+        assertEquals(HttpStatus.FORBIDDEN, createUser(USER_1.toString(), "").statusCode)
     }
 
     private fun validAuthResponse(response: ResponseEntity<String>) {
@@ -85,47 +71,28 @@ class AuthenticationResourceTest : TestBase() {
 
         invalidateAllRefreshToken()
 
-        refresh(refreshCookieToken).let {
-            assertEquals(HttpStatus.BAD_REQUEST, it.statusCode)
-        }
+        assertEquals(HttpStatus.BAD_REQUEST, refresh(refreshCookieToken).statusCode)
     }
 
     @Test
     fun testCheckMalformedRefreshTokenBadRequest() {
-        authenticate().let {
-            assertEquals(HttpStatus.OK, it.statusCode)
-        }
+        assertEquals(HttpStatus.OK, authenticate().statusCode)
 
-        refresh("0123456789ABCDEF").let {
-            assertEquals(HttpStatus.BAD_REQUEST, it.statusCode)
-        }
+        assertEquals(HttpStatus.BAD_REQUEST, refresh("0123456789ABCDEF").statusCode)
     }
 
     @Test
     fun testRefreshNoRefreshTokenBadRequest() {
-        refresh("").let {
-            assertEquals(HttpStatus.BAD_REQUEST, it.statusCode)
-        }
+        assertEquals(HttpStatus.BAD_REQUEST, refresh("").statusCode)
     }
 
     @Test
     fun testRefreshTokenExpiredForbidden() {
         jwtService.generateAuthToken(
                 JwtUser("id", ADMIN.json["username"] as String, "password", true, emptyList()),
-                Date.from(Instant.now().minus(30, ChronoUnit.DAYS))).let {
+                Date.from(Instant.now().minus(30, ChronoUnit.DAYS))).let { authToken ->
 
-            HttpCookie("RefreshCookie", it).let { cookie ->
-                refresh(cookie.toString()).let { refreshResult ->
-                    assertEquals(HttpStatus.FORBIDDEN, refreshResult.statusCode)
-                }
-            }
-        }
-    }
-
-    @Test
-    fun testCheckUnauthorizedAccesIsForbidden() {
-        createUser(USER_1.toString(), "").let {
-            assertEquals(HttpStatus.FORBIDDEN, it.statusCode)
+            assertEquals(HttpStatus.FORBIDDEN, refresh(HttpCookie("RefreshCookie", authToken).toString()).statusCode)
         }
     }
 
@@ -134,11 +101,8 @@ class AuthenticationResourceTest : TestBase() {
         authenticate().let { response ->
             validAuthResponse(response).let {
                 val token = extractToken(response.body)
-                logout(token.auth_token).let {
-                    validLogoutResponse(it)
-                }
+                validLogoutResponse(logout(token.auth_token))
             }
         }
-
     }
 }
