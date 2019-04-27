@@ -1,5 +1,6 @@
 sudo: required
 language: java
+env: DEPLOY='linux'
 jdk:
   - openjdk11
 jobs:
