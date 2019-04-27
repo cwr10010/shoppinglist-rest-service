@@ -1,8 +1,7 @@
 sudo: required
 language: java
-env: DEPLOY='linux'
 jdk:
-  - openjdk11
+  - oraclejdk11
 jobs:
   include:
     - stage: test
