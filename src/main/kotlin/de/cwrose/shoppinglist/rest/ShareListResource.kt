@@ -71,7 +71,7 @@ class ShareListResource(
                                         sharedShoppingListRepository.delete(thisSharedList)
                                     }
                                 } .orElseThrow {
-                                    BadReceiverException("SharedListRequest was not ment for user ${currentUser.id}")
+                                    BadReceiverException("SharedListRequest was not meant for user ${currentUser.id}")
                                 }
                             }
                         }

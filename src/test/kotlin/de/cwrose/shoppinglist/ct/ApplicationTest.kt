@@ -14,7 +14,7 @@ class ApplicationTest {
     @Test
     fun test() {
         main(
-                arrayOf("--spring.main.web-application-type=none")
+                arrayOf()
         )
     }
 }

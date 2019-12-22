@@ -2,15 +2,15 @@
 buildscript {
     ext {
         // compile and runtime
-        kotlin_logging_version = '1.6.26'
+        kotlin_logging_version = '1.7.8'
         springfox_version = '2.9.2'
 
-        jackson_module_kotlin_version = '2.9.8'
+        jackson_module_kotlin_version = '2.10.1'
         jjwt_version = '0.9.1'
 
-        flyway_version = '5.2.4'
-        mysql_version = '8.0.15'
-        h2_version = '1.4.199'
+        flyway_version = '6.0.6'
+        mysql_version = '8.0.17'
+        h2_version = '1.4.200'
 
         // test
         kotson_version = '2.5.0'
@@ -22,24 +22,23 @@ buildscript {
 
 plugins {
 
-    id "org.jetbrains.kotlin.jvm" version '1.3.31'
-    id "org.jetbrains.kotlin.plugin.spring" version '1.3.31' // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
-    id 'org.springframework.boot' version '2.1.4.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.7.RELEASE'
+    id "org.jetbrains.kotlin.jvm" version '1.3.61'
+    id "org.jetbrains.kotlin.plugin.spring" version '1.3.61' // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
 
     // coverage
     id 'jacoco'
-    id 'com.github.kt3k.coveralls' version '2.8.2'
+    id 'com.github.kt3k.coveralls' version '2.9.0'
 
     // package
-    id "com.avast.gradle.docker-compose" version "0.9.1"
-    id 'com.github.ben-manes.versions' version '0.21.0'
+    id "com.avast.gradle.docker-compose" version "0.10.7"
+    id 'com.github.ben-manes.versions' version '0.27.0'
 
 }
 
 repositories {
     jcenter()
-    mavenCentral()
 }
 
 group 'de.cwrose'
@@ -60,15 +59,13 @@ dependencies {
 
     implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_module_kotlin_version" as String)
 
-    implementation ("org.flywaydb:flyway-core:$flyway_version" as String)
-    implementation ("mysql:mysql-connector-java:$mysql_version" as String)
-    //implementation 'com.h2database:h2'
+    implementation ("org.flywaydb:flyway-core")
+    //implementation ("mysql:mysql-connector-java:$mysql_version" as String)
+    implementation 'com.h2database:h2'
 
     implementation ("io.jsonwebtoken:jjwt:$jjwt_version" as String)
 
-    implementation ("io.springfox:springfox-swagger2:$springfox_version" as String)
-    implementation ("io.springfox:springfox-data-rest:$springfox_version" as String)
-    implementation ("io.springfox:springfox-bean-validators:$springfox_version" as String)
+    implementation 'org.springdoc:springdoc-openapi-webmvc-core:1.2.18'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation ("com.h2database:h2:$h2_version" as String)
@@ -98,7 +95,7 @@ dockerCompose {
     removeImages = "Local" // Other accepted values are: "All" and "Local"
     waitForTcpPorts = true // turns off the waiting for exposed TCP ports opening
     dockerComposeWorkingDirectory = 'deploy/'
-    environment.put 'PATH', '/usr/local/bin' // Pass environment variable to 'docker-compose' for substitution in compose file
+    environment.put "PATH", "/usr/local/bin" // Pass environment variable to 'docker-compose' for substitution in compose file
 }
 
 composeUp.dependsOn(assemble)
@@ -119,3 +116,8 @@ jacocoTestReport {
 }
 
 coveralls.sourceDirs = ['src/main/kotlin']
+
+wrapper {
+    gradleVersion = "6.0.1"
+    distributionType = Wrapper.DistributionType.ALL
+}

@@ -51,7 +51,7 @@ class RegistrationResource(
 
                 }
             } .let {
-                ResponseEntity.ok().build<Void>()
+                ResponseEntity.ok().build()
             }
 
     @GetMapping
